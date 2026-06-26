@@ -1,0 +1,424 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary)}
+.app{display:flex;height:100vh;min-height:600px}
+.sidebar{width:200px;border-right:0.5px solid var(--color-border-tertiary);padding:1rem 0;flex-shrink:0;background:var(--color-background-secondary)}
+.logo{padding:0 1rem 1rem;font-size:15px;font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:0.5rem}
+.logo span{color:var(--color-text-secondary);font-size:12px;display:block;font-weight:400;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 1rem;font-size:14px;cursor:pointer;color:var(--color-text-secondary);border-radius:0}
+.nav-item:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-left:2px solid #378ADD}
+.nav-item i{font-size:17px}
+.main{flex:1;overflow-y:auto;background:var(--color-background-tertiary)}
+.topbar{padding:1rem 1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:12px;background:var(--color-background-primary);position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:500;flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:6px 12px;width:260px}
+.search input{border:none;background:transparent;font-size:14px;outline:none;color:var(--color-text-primary);width:100%}
+.search input::placeholder{color:var(--color-text-tertiary)}
+.search i{color:var(--color-text-tertiary);font-size:16px}
+.btn{padding:7px 14px;border-radius:var(--border-radius-md);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-sans)}
+.btn-primary{background:#185FA5;color:#fff;border:none}
+.btn-primary:hover{background:#0C447C}
+.btn-outline{background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary)}
+.btn-outline:hover{background:var(--color-background-secondary)}
+.content{padding:1.5rem}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;cursor:pointer}
+.stat:hover{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary)}
+.stat-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:500}
+.stat-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:4px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:500}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-green{background:#EAF3DE;color:#27500A}
+.badge-amber{background:#FAEEDA;color:#633806}
+.badge-red{background:#FCEBEB;color:#791F1F}
+.badge-gray{background:#F1EFE8;color:#444441}
+.section{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem;overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.section-header h2{font-size:14px;font-weight:500}
+.table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.table th{text-align:left;padding:8px 1.25rem;font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.table td{padding:10px 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:var(--color-background-secondary)}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--color-text-secondary)}
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.tab{padding:10px 1.25rem;font-size:13px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--color-text-primary)}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);padding:1.5rem;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:1.25rem}
+.field{margin-bottom:1rem}
+.field label{font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:4px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary)}
+.field textarea{min-height:80px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--color-border-tertiary)}
+.timeline{padding:1rem 1.25rem}
+.timeline-item{display:flex;gap:12px;padding-bottom:1.25rem;position:relative}
+.timeline-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:1px;background:var(--color-border-tertiary)}
+.timeline-dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--color-background-primary)}
+.timeline-dot.done{background:#185FA5;border-color:#185FA5;color:#fff}
+.timeline-dot.active{border-color:#185FA5;color:#185FA5}
+.timeline-dot i{font-size:14px}
+.timeline-content{flex:1;padding-top:4px}
+.timeline-title{font-size:13px;font-weight:500;margin-bottom:2px}
+.timeline-meta{font-size:12px;color:var(--color-text-secondary)}
+.filter-bar{display:flex;gap:8px;padding:0.75rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);flex-wrap:wrap}
+.filter-btn{padding:4px 12px;border-radius:999px;font-size:12px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);font-family:var(--font-sans)}
+.filter-btn.active{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+.empty{text-align:center;padding:3rem;color:var(--color-text-tertiary);font-size:14px}
+.detail-panel{display:none;position:fixed;right:0;top:0;bottom:0;width:360px;background:var(--color-background-primary);border-left:0.5px solid var(--color-border-tertiary);z-index:50;overflow-y:auto;padding:1.5rem}
+.detail-panel.open{display:block}
+.detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.detail-header h2{font-size:15px;font-weight:500}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px;margin-bottom:1.5rem}
+.dt{color:var(--color-text-secondary);white-space:nowrap}
+.dd{color:var(--color-text-primary);font-weight:400;overflow:hidden;text-overflow:ellipsis}
+</style>
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Warehouse tracking system for serial numbers, item tracking, and courier shipments</h2>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="logo">WarehouseOS<span>Tracking Platform</span></div>
+    <div class="nav-item active" onclick="switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i>Items</div>
+    <div class="nav-item" onclick="switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i>Serial numbers</div>
+    <div class="nav-item" onclick="switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i>Couriers</div>
+    <div class="nav-item" onclick="switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i>Movements</div>
+    <div class="nav-item" style="margin-top:auto" onclick="switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i>Settings</div>
+  </div>
+
+  <div class="main" id="main-area">
+    <div class="topbar">
+      <h1 id="page-title">Items</h1>
+      <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input type="text" id="global-search" placeholder="Search by name, serial, tracking…" oninput="handleSearch()"></div>
+      <button class="btn btn-primary" id="add-btn" onclick="openAddModal()"><i class="ti ti-plus" aria-hidden="true"></i><span id="add-label">Add item</span></button>
+    </div>
+    <div class="content" id="page-content"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <h2 id="modal-title">Add item</h2>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <h2 id="detail-title">Detail</h2>
+    <button class="btn btn-outline" onclick="closeDetail()" aria-label="Close detail"><i class="ti ti-x" aria-hidden="true"></i></button>
+  </div>
+  <div id="detail-body"></div>
+</div>
+
+<script>
+let currentPage = 'items';
+let searchTerm = '';
+
+const state = {
+  items: [
+    {id:'ITM-001',name:'Laptop 15" Pro',sku:'LP-15-PRO',category:'Electronics',location:'A1-03',qty:12,status:'In stock'},
+    {id:'ITM-002',name:'Wireless Keyboard',sku:'WK-BLK-01',category:'Peripherals',location:'B2-11',qty:45,status:'In stock'},
+    {id:'ITM-003',name:'USB-C Hub 7-port',sku:'UC-HUB-7P',category:'Accessories',location:'C3-05',qty:3,status:'Low stock'},
+    {id:'ITM-004',name:'Monitor 27" 4K',sku:'MN-27-4K',category:'Electronics',location:'A2-01',qty:0,status:'Out of stock'},
+    {id:'ITM-005',name:'Office Chair Ergonomic',sku:'OC-ERG-BL',category:'Furniture',location:'D1-02',qty:8,status:'In stock'},
+  ],
+  serials: [
+    {sn:'SN-2024-78421',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Order #10231',status:'Shipped',location:'In transit'},
+    {sn:'SN-2024-78422',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Stock',status:'In stock',location:'A1-03'},
+    {sn:'SN-2024-81009',item:'Monitor 27" 4K',itemId:'ITM-004',assigned:'Order #10198',status:'Delivered',location:'Customer'},
+    {sn:'SN-2024-55012',item:'USB-C Hub 7-port',itemId:'ITM-003',assigned:'Order #10245',status:'Processing',location:'A1-03'},
+    {sn:'SN-2024-33100',item:'Wireless Keyboard',itemId:'ITM-002',assigned:'Stock',status:'In stock',location:'B2-11'},
+  ],
+  couriers: [
+    {id:'TRK-90012',courier:'FedEx',service:'Express',origin:'Sydney Warehouse',dest:'Melbourne, VIC',status:'In transit',eta:'27 Jun 2026',items:['SN-2024-78421'],updated:'26 Jun 12:34'},
+    {id:'TRK-90008',courier:'Australia Post',service:'Standard',origin:'Sydney Warehouse',dest:'Brisbane, QLD',status:'Delivered',eta:'24 Jun 2026',items:['SN-2024-81009'],updated:'24 Jun 09:10'},
+    {id:'TRK-90015',courier:'DHL',service:'Same Day',origin:'Sydney Warehouse',dest:'Parramatta, NSW',status:'Out for delivery',eta:'26 Jun 2026',items:['SN-2024-55012'],updated:'26 Jun 08:55'},
+    {id:'TRK-90018',courier:'StarTrack',service:'Express',origin:'Sydney Warehouse',dest:'Perth, WA',status:'Processing',eta:'28 Jun 2026',items:[],updated:'26 Jun 07:00'},
+  ],
+  movements: [
+    {id:'MOV-441',type:'Outbound',item:'Laptop 15" Pro',sn:'SN-2024-78421',from:'A1-03',to:'Dispatch',by:'Jake T.',date:'26 Jun 14:10'},
+    {id:'MOV-440',type:'Inbound',item:'Wireless Keyboard',sn:'SN-2024-33100',from:'Receiving',to:'B2-11',by:'Sara W.',date:'26 Jun 11:05'},
+    {id:'MOV-439',type:'Transfer',item:'USB-C Hub 7-port',sn:'SN-2024-55012',from:'C3-07',to:'A1-03',by:'Jake T.',date:'25 Jun 16:30'},
+    {id:'MOV-438',type:'Outbound',item:'Monitor 27" 4K',sn:'SN-2024-81009',from:'A2-01',to:'Dispatch',by:'Maria L.',date:'23 Jun 09:00'},
+  ]
+};
+
+const itemStatuses = ['In stock','Low stock','Out of stock','Reserved'];
+const courierStatuses = ['Processing','In transit','Out for delivery','Delivered','Failed'];
+const courierNames = ['FedEx','Australia Post','DHL','StarTrack','Toll','TNT'];
+const movTypes = ['Inbound','Outbound','Transfer'];
+const categories = ['Electronics','Peripherals','Accessories','Furniture','Other'];
+
+function statusBadge(s){
+  const map={
+    'In stock':'badge-green','Low stock':'badge-amber','Out of stock':'badge-red','Reserved':'badge-blue',
+    'In transit':'badge-blue','Delivered':'badge-green','Processing':'badge-gray','Out for delivery':'badge-amber','Failed':'badge-red',
+    'Shipped':'badge-blue','Inbound':'badge-green','Outbound':'badge-amber','Transfer':'badge-blue'
+  };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+
+function switchPage(page){
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[['items','serials','couriers','movements','settings'].indexOf(page)].classList.add('active');
+  document.getElementById('page-title').textContent = {items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',settings:'Settings'}[page];
+  document.getElementById('add-label').textContent = {items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',settings:''}[page];
+  document.getElementById('add-btn').style.display = page==='settings'?'none':'flex';
+  closeDetail();
+  render();
+}
+
+let activeFilter = 'all';
+function render(){
+  const q = searchTerm.toLowerCase();
+  const el = document.getElementById('page-content');
+  if(currentPage==='items') renderItems(el,q);
+  else if(currentPage==='serials') renderSerials(el,q);
+  else if(currentPage==='couriers') renderCouriers(el,q);
+  else if(currentPage==='movements') renderMovements(el,q);
+  else renderSettings(el);
+}
+
+function renderItems(el,q){
+  let data = state.items.filter(i=>!q||(i.name+i.sku+i.id+i.category).toLowerCase().includes(q));
+  const inStock=state.items.filter(i=>i.status==='In stock').length;
+  const low=state.items.filter(i=>i.status==='Low stock').length;
+  const out=state.items.filter(i=>i.status==='Out of stock').length;
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Total items</div><div class="stat-value">${state.items.length}</div><div class="stat-sub">SKUs tracked</div></div>
+    <div class="stat"><div class="stat-label">In stock</div><div class="stat-value" style="color:#27500A">${inStock}</div><div class="stat-sub">Available</div></div>
+    <div class="stat"><div class="stat-label">Low stock</div><div class="stat-value" style="color:#633806">${low}</div><div class="stat-sub">Below threshold</div></div>
+    <div class="stat"><div class="stat-label">Out of stock</div><div class="stat-value" style="color:#791F1F">${out}</div><div class="stat-sub">Needs replenishment</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Inventory</h2><span style="font-size:12px;color:var(--color-text-tertiary)">${data.length} items</span></div>
+    <table class="table">
+      <thead><tr><th style="width:90px">Item ID</th><th style="width:200px">Name</th><th style="width:110px">SKU</th><th style="width:120px">Category</th><th style="width:90px">Location</th><th style="width:60px;text-align:right">Qty</th><th style="width:110px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(i=>`<tr style="cursor:pointer" onclick="showItemDetail('${i.id}')">
+        <td class="mono">${i.id}</td><td style="font-weight:500">${i.name}</td><td class="mono">${i.sku}</td><td>${i.category}</td><td class="mono">${i.location}</td>
+        <td style="text-align:right;font-weight:500">${i.qty}</td><td>${statusBadge(i.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="7"><div class="empty">No items found</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderSerials(el,q){
+  let data = state.serials.filter(i=>!q||(i.sn+i.item+i.assigned+i.status).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Registered serials</div><div class="stat-value">${state.serials.length}</div></div>
+    <div class="stat"><div class="stat-label">In stock</div><div class="stat-value" style="color:#27500A">${state.serials.filter(s=>s.status==='In stock').length}</div></div>
+    <div class="stat"><div class="stat-label">Shipped</div><div class="stat-value" style="color:#0C447C">${state.serials.filter(s=>s.status==='Shipped').length}</div></div>
+    <div class="stat"><div class="stat-label">Delivered</div><div class="stat-value" style="color:#444441">${state.serials.filter(s=>s.status==='Delivered').length}</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Serial number registry</h2><span style="font-size:12px;color:var(--color-text-tertiary)">${data.length} records</span></div>
+    <table class="table">
+      <thead><tr><th style="width:150px">Serial number</th><th style="width:180px">Item</th><th style="width:130px">Assigned to</th><th style="width:110px">Location</th><th style="width:100px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(s=>`<tr style="cursor:pointer" onclick="showSerialDetail('${s.sn}')">
+        <td class="mono">${s.sn}</td><td>${s.item}</td><td style="font-size:12px;color:var(--color-text-secondary)">${s.assigned}</td>
+        <td class="mono">${s.location}</td><td>${statusBadge(s.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="5"><div class="empty">No serial numbers found</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderCouriers(el,q){
+  let data = state.couriers.filter(i=>!q||(i.id+i.courier+i.dest+i.status).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Total shipments</div><div class="stat-value">${state.couriers.length}</div></div>
+    <div class="stat"><div class="stat-label">In transit</div><div class="stat-value" style="color:#0C447C">${state.couriers.filter(c=>c.status==='In transit').length}</div></div>
+    <div class="stat"><div class="stat-label">Out for delivery</div><div class="stat-value" style="color:#633806">${state.couriers.filter(c=>c.status==='Out for delivery').length}</div></div>
+    <div class="stat"><div class="stat-label">Delivered</div><div class="stat-value" style="color:#27500A">${state.couriers.filter(c=>c.status==='Delivered').length}</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Shipments</h2><span style="font-size:12px;color:var(--color-text-tertiary)">${data.length} shipments</span></div>
+    <table class="table">
+      <thead><tr><th style="width:100px">Tracking ID</th><th style="width:120px">Courier</th><th style="width:90px">Service</th><th style="width:170px">Destination</th><th style="width:100px">ETA</th><th style="width:120px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(c=>`<tr style="cursor:pointer" onclick="showCourierDetail('${c.id}')">
+        <td class="mono">${c.id}</td><td style="font-weight:500">${c.courier}</td><td style="font-size:12px;color:var(--color-text-secondary)">${c.service}</td>
+        <td>${c.dest}</td><td style="font-size:12px">${c.eta}</td><td>${statusBadge(c.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="6"><div class="empty">No shipments found</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderMovements(el,q){
+  let data = state.movements.filter(i=>!q||(i.id+i.item+i.sn+i.type).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="section">
+    <div class="section-header"><h2>Movement log</h2><span style="font-size:12px;color:var(--color-text-tertiary)">${data.length} entries</span></div>
+    <table class="table">
+      <thead><tr><th style="width:90px">Move ID</th><th style="width:80px">Type</th><th style="width:170px">Item</th><th style="width:140px">Serial</th><th style="width:80px">From</th><th style="width:80px">To</th><th style="width:80px">By</th><th style="width:120px">Date</th></tr></thead>
+      <tbody>${data.length?data.map(m=>`<tr>
+        <td class="mono">${m.id}</td><td>${statusBadge(m.type)}</td><td>${m.item}</td><td class="mono">${m.sn}</td>
+        <td class="mono">${m.from}</td><td class="mono">${m.to}</td>
+        <td style="font-size:12px">${m.by}</td><td style="font-size:12px;color:var(--color-text-secondary)">${m.date}</td>
+      </tr>`).join(''):'<tr><td colspan="8"><div class="empty">No movements found</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderSettings(el){
+  el.innerHTML=`<div class="section"><div class="section-header"><h2>System settings</h2></div>
+  <div style="padding:1.5rem;display:grid;gap:1rem;max-width:480px">
+    <div class="field"><label>Warehouse name</label><input type="text" value="Sydney Main Warehouse"></div>
+    <div class="field"><label>Default currency</label><select><option>AUD</option><option>USD</option><option>EUR</option></select></div>
+    <div class="field"><label>Low stock threshold</label><input type="number" value="5"></div>
+    <div class="field"><label>Timezone</label><select><option>Australia/Sydney</option><option>Australia/Melbourne</option><option>UTC</option></select></div>
+    <button class="btn btn-primary" style="width:fit-content" onclick="alert('Settings saved')"><i class="ti ti-check" aria-hidden="true"></i>Save settings</button>
+  </div></div>`;
+}
+
+function handleSearch(){
+  searchTerm = document.getElementById('global-search').value;
+  render();
+}
+
+let editingId = null;
+function openAddModal(){
+  editingId = null;
+  const titles={items:'Add item',serials:'Register serial number',couriers:'New shipment',movements:'Log movement'};
+  document.getElementById('modal-title').textContent = titles[currentPage]||'Add';
+  document.getElementById('modal-body').innerHTML = getModalForm();
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function getModalForm(){
+  if(currentPage==='items') return `
+    <div class="field-row"><div class="field"><label>Item name</label><input id="f-name" type="text" placeholder="e.g. Laptop 15 Pro"></div>
+    <div class="field"><label>SKU</label><input id="f-sku" type="text" placeholder="e.g. LP-15-PRO"></div></div>
+    <div class="field-row"><div class="field"><label>Category</label><select id="f-cat">${categories.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Location</label><input id="f-loc" type="text" placeholder="e.g. A1-03"></div></div>
+    <div class="field-row"><div class="field"><label>Qty</label><input id="f-qty" type="number" value="0" min="0"></div>
+    <div class="field"><label>Status</label><select id="f-status">${itemStatuses.map(s=>`<option>${s}</option>`).join('')}</select></div></div>`;
+  if(currentPage==='serials') return `
+    <div class="field"><label>Serial number</label><input id="f-sn" type="text" placeholder="e.g. SN-2024-99999"></div>
+    <div class="field"><label>Item</label><select id="f-item">${state.items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')}</select></div>
+    <div class="field-row"><div class="field"><label>Assigned to</label><input id="f-assigned" type="text" placeholder="Order # or Stock"></div>
+    <div class="field"><label>Location</label><input id="f-loc" type="text" placeholder="e.g. A1-03"></div></div>
+    <div class="field"><label>Status</label><select id="f-status"><option>In stock</option><option>Shipped</option><option>Delivered</option><option>Processing</option></select></div>`;
+  if(currentPage==='couriers') return `
+    <div class="field"><label>Tracking ID</label><input id="f-id" type="text" placeholder="e.g. TRK-90020"></div>
+    <div class="field-row"><div class="field"><label>Courier</label><select id="f-courier">${courierNames.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Service type</label><input id="f-service" type="text" placeholder="e.g. Express"></div></div>
+    <div class="field-row"><div class="field"><label>Origin</label><input id="f-origin" type="text" value="Sydney Warehouse"></div>
+    <div class="field"><label>Destination</label><input id="f-dest" type="text" placeholder="City, State"></div></div>
+    <div class="field-row"><div class="field"><label>ETA</label><input id="f-eta" type="text" placeholder="27 Jun 2026"></div>
+    <div class="field"><label>Status</label><select id="f-status">${courierStatuses.map(s=>`<option>${s}</option>`).join('')}</select></div></div>`;
+  if(currentPage==='movements') return `
+    <div class="field-row"><div class="field"><label>Type</label><select id="f-type">${movTypes.map(t=>`<option>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Serial number</label><select id="f-sn">${state.serials.map(s=>`<option value="${s.sn}">${s.sn}</option>`).join('')}</select></div></div>
+    <div class="field-row"><div class="field"><label>From</label><input id="f-from" type="text" placeholder="e.g. A1-03"></div>
+    <div class="field"><label>To</label><input id="f-to" type="text" placeholder="e.g. Dispatch"></div></div>
+    <div class="field"><label>Moved by</label><input id="f-by" type="text" placeholder="Staff name"></div>`;
+  return '';
+}
+
+function saveModal(){
+  const now = new Date();
+  const dateStr = `${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(currentPage==='items'){
+    const name=document.getElementById('f-name').value||'New Item';
+    const n=state.items.length+1;
+    state.items.push({id:`ITM-${String(n).padStart(3,'0')}`,name,sku:document.getElementById('f-sku').value||'SKU-NEW',category:document.getElementById('f-cat').value,location:document.getElementById('f-loc').value||'-',qty:parseInt(document.getElementById('f-qty').value)||0,status:document.getElementById('f-status').value});
+  } else if(currentPage==='serials'){
+    const item = state.items.find(i=>i.id===document.getElementById('f-item').value);
+    state.serials.push({sn:document.getElementById('f-sn').value||`SN-2024-${Math.floor(Math.random()*90000+10000)}`,item:item?item.name:'Unknown',itemId:document.getElementById('f-item').value,assigned:document.getElementById('f-assigned').value||'Stock',status:document.getElementById('f-status').value,location:document.getElementById('f-loc').value||'-'});
+  } else if(currentPage==='couriers'){
+    state.couriers.push({id:document.getElementById('f-id').value||`TRK-${Math.floor(Math.random()*9000+90000)}`,courier:document.getElementById('f-courier').value,service:document.getElementById('f-service').value||'Standard',origin:document.getElementById('f-origin').value,dest:document.getElementById('f-dest').value||'Unknown',status:document.getElementById('f-status').value,eta:document.getElementById('f-eta').value||'TBD',items:[],updated:dateStr});
+  } else if(currentPage==='movements'){
+    const snVal=document.getElementById('f-sn').value;
+    const ser=state.serials.find(s=>s.sn===snVal);
+    const n=state.movements.length+1;
+    state.movements.unshift({id:`MOV-${440+n}`,type:document.getElementById('f-type').value,item:ser?ser.item:'Unknown',sn:snVal,from:document.getElementById('f-from').value||'-',to:document.getElementById('f-to').value||'-',by:document.getElementById('f-by').value||'Staff',date:`26 Jun ${dateStr.split(' ').pop()}`});
+  }
+  closeModalDirect();
+  render();
+}
+
+function closeModal(e){if(e.target===document.getElementById('modal-bg'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal-bg').classList.remove('open');}
+
+function showItemDetail(id){
+  const i=state.items.find(x=>x.id===id);
+  const serials=state.serials.filter(s=>s.itemId===id);
+  document.getElementById('detail-title').textContent=i.name;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Item ID</span><span class="dd mono">${i.id}</span>
+    <span class="dt">SKU</span><span class="dd mono">${i.sku}</span>
+    <span class="dt">Category</span><span class="dd">${i.category}</span>
+    <span class="dt">Location</span><span class="dd mono">${i.location}</span>
+    <span class="dt">Quantity</span><span class="dd">${i.qty}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(i.status)}</span></div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Serialised units (${serials.length})</div>
+    ${serials.length?serials.map(s=>`<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 12px;margin-bottom:8px;font-size:12px">
+      <span class="mono">${s.sn}</span> &nbsp;${statusBadge(s.status)}<div style="color:var(--color-text-secondary);margin-top:2px">${s.assigned} · ${s.location}</div></div>`).join(''):'<div style="font-size:13px;color:var(--color-text-tertiary)">No serial numbers registered</div>'}`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function showSerialDetail(sn){
+  const s=state.serials.find(x=>x.sn===sn);
+  const movs=state.movements.filter(m=>m.sn===sn);
+  document.getElementById('detail-title').textContent='Serial detail';
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Serial</span><span class="dd mono">${s.sn}</span>
+    <span class="dt">Item</span><span class="dd">${s.item}</span>
+    <span class="dt">Assigned</span><span class="dd">${s.assigned}</span>
+    <span class="dt">Location</span><span class="dd mono">${s.location}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(s.status)}</span></div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px">Movement history</div>
+    <div class="timeline">${movs.length?movs.map((m,idx)=>`<div class="timeline-item">
+      <div class="timeline-dot ${idx===0?'active':'done'}"><i class="ti ti-${m.type==='Inbound'?'arrow-down':m.type==='Outbound'?'arrow-up':'arrows-transfer-up'}" aria-hidden="true"></i></div>
+      <div class="timeline-content"><div class="timeline-title">${m.type}: ${m.from} → ${m.to}</div><div class="timeline-meta">${m.by} · ${m.date}</div></div>
+    </div>`).join(''):'<div style="font-size:13px;color:var(--color-text-tertiary)">No movements recorded</div>'}</div>`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function showCourierDetail(id){
+  const c=state.couriers.find(x=>x.id===id);
+  const steps=[
+    {label:'Order created',done:true,icon:'ti-circle-check'},
+    {label:'Processing',done:['Processing','In transit','Out for delivery','Delivered'].includes(c.status),icon:'ti-package'},
+    {label:'In transit',done:['In transit','Out for delivery','Delivered'].includes(c.status),icon:'ti-truck-delivery'},
+    {label:'Out for delivery',done:['Out for delivery','Delivered'].includes(c.status),icon:'ti-map-pin'},
+    {label:'Delivered',done:c.status==='Delivered',icon:'ti-circle-check'},
+  ];
+  const active=steps.findLastIndex(s=>s.done);
+  document.getElementById('detail-title').textContent=c.id;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Courier</span><span class="dd">${c.courier}</span>
+    <span class="dt">Service</span><span class="dd">${c.service}</span>
+    <span class="dt">Origin</span><span class="dd">${c.origin}</span>
+    <span class="dt">Destination</span><span class="dd">${c.dest}</span>
+    <span class="dt">ETA</span><span class="dd">${c.eta}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(c.status)}</span>
+    <span class="dt">Updated</span><span class="dd">${c.updated}</span></div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px">Shipment progress</div>
+    <div class="timeline">${steps.map((s,i)=>`<div class="timeline-item">
+      <div class="timeline-dot ${s.done?(i===active?'active':'done'):''}"><i class="ti ${s.icon}" aria-hidden="true"></i></div>
+      <div class="timeline-content"><div class="timeline-title" style="color:${s.done?'var(--color-text-primary)':'var(--color-text-tertiary)'}">${s.label}</div></div>
+    </div>`).join('')}</div>
+    ${c.items.length?`<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Items in shipment</div>${c.items.map(sn=>`<div class="mono" style="font-size:12px;padding:4px 0">${sn}</div>`).join('')}`:'<div style="font-size:13px;color:var(--color-text-tertiary)">No items linked</div>'}`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open');}
+
+render();
+</script>
