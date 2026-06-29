@@ -34,3 +34,8 @@ Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari). Data is
 - Per-client store directory (Blooms The Chemist network) with on-device custom stores
 - E-waste booking with a 2-week processing window
 - Light/dark theming with OS-preference detection
+
+### Hosting it on the web
+
+The app is fully static, so it can be hosted on Cloudflare Pages with no build
+step or backend. See [`DEPLOY.md`](DEPLOY.md) for step-by-step instructions.
