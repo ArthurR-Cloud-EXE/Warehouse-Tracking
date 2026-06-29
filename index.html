@@ -6672,15 +6672,15 @@ setTimeout(function(){
      1. open the browser console on the page
      2. run:  whosHash('your-new-password')
      3. paste the result into PASS_HASH below, set USERNAME to taste
-   Default login — username: admin   password: warehouse
+   Default login — username: t360group   password: (set by owner)
    ============================================================ */
 function whosHash(s){
   s=String(s); let h1=5381,h2=0;
   for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=((h1<<5)+h1+c)>>>0;h2=(c+(h2<<6)+(h2<<16)-h2)>>>0;}
   return ('0000000'+h1.toString(16)).slice(-8)+('0000000'+h2.toString(16)).slice(-8);
 }
-const AUTH_USERNAME = 'admin';
-const AUTH_PASS_HASH = 'd787a43807d78d03';      // whosHash('warehouse')
+const AUTH_USERNAME = 't360group';
+const AUTH_PASS_HASH = 'd9f571c815bd2d5d';      // whosHash('<set by owner>')
 const AUTH_KEY = 'whos-auth';
 
 function whosLogout(){

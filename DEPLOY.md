@@ -68,7 +68,8 @@ client-side, so a determined visitor can bypass it (view source, disable
 JavaScript, read `localStorage`). Treat it as a "please don't shoulder-surf"
 deterrent only.
 
-- **Default login:** username `admin`, password `warehouse`.
+- **Login:** username `t360group`; the password is set by the owner and is
+  intentionally not stored in this repo (only its hash lives in `index.html`).
 - **Change the credentials:** open the site, open the browser console, run
   `whosHash('your-new-password')`, then paste the result into `AUTH_PASS_HASH`
   near the bottom of `index.html` (and set `AUTH_USERNAME`). Commit and redeploy.
