@@ -480,6 +480,76 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
 
 <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Warehouse tracking system for serial numbers, item tracking, and courier shipments</h2>
 
+<!-- ============================================================
+     LOGIN GATE (in-app, cosmetic)
+     This is a UX/branding lock, NOT real security: everything
+     runs client-side, so a determined user can bypass it. For
+     genuine protection put Cloudflare Access in front of the
+     site (see DEPLOY.md → "Restricting access").
+     ============================================================ -->
+<style>
+#login-screen{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--accent-wash), transparent 60%),
+    var(--color-background-tertiary);
+}
+#login-screen[hidden]{display:none}
+.login-card{
+  width:100%;max-width:380px;
+  background:var(--color-background-primary);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-lg);
+  box-shadow:var(--shadow-lg);
+  padding:1.9rem 1.75rem 1.6rem;
+}
+.login-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--color-text-primary)}
+.login-brand i{
+  width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,var(--accent),var(--accent-deep));color:#fff;font-size:19px;box-shadow:var(--shadow-sm);
+}
+.login-sub{color:var(--color-text-secondary);font-size:13px;margin:.5rem 0 1.4rem}
+.login-field{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem}
+.login-field label{font-size:12px;font-weight:600;color:var(--color-text-secondary)}
+.login-field input{
+  width:100%;padding:.6rem .7rem;font:inherit;font-size:14px;
+  color:var(--color-text-primary);background:var(--color-background-secondary);
+  border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);outline:none;
+}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.login-btn{
+  width:100%;margin-top:.4rem;padding:.65rem;font:inherit;font-weight:600;font-size:14px;cursor:pointer;
+  color:#fff;background:linear-gradient(150deg,var(--accent),var(--accent-deep));
+  border:none;border-radius:var(--border-radius-md);box-shadow:var(--shadow-sm);
+}
+.login-btn:active{transform:translateY(1px)}
+.login-error{
+  display:none;margin-top:.9rem;font-size:13px;font-weight:500;
+  color:var(--badge-red-fg);background:var(--badge-red-bg);
+  padding:.55rem .7rem;border-radius:var(--border-radius-md);
+}
+.login-error.show{display:block}
+.login-foot{margin-top:1.2rem;font-size:11px;line-height:1.5;color:var(--color-text-tertiary)}
+</style>
+<div id="login-screen" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <form class="login-card" id="login-form" autocomplete="on">
+    <div class="login-brand"><i class="ti ti-building-warehouse" aria-hidden="true"></i><span id="login-title">WarehouseOS</span></div>
+    <div class="login-sub">Sign in to access the tracking platform.</div>
+    <div class="login-field">
+      <label for="login-user">Username</label>
+      <input id="login-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    </div>
+    <div class="login-field">
+      <label for="login-pass">Password</label>
+      <input id="login-pass" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="login-btn" type="submit"><i class="ti ti-login-2" aria-hidden="true"></i> Sign in</button>
+    <div class="login-error" id="login-error" role="alert">Incorrect username or password.</div>
+    <div class="login-foot">Sessions end when you close the browser tab.</div>
+  </form>
+</div>
+
 <div class="app">
   <div class="sidebar">
     <div class="logo">
@@ -503,6 +573,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <div class="nav-group">
         <div class="nav-label">System</div>
         <div class="nav-item" tabindex="0" role="button" onclick="switchPage('settings')" onkeydown="if(event.key==='Enter')switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+        <div class="nav-item" tabindex="0" role="button" onclick="whosLogout()" onkeydown="if(event.key==='Enter')whosLogout()"><i class="ti ti-logout-2" aria-hidden="true"></i><span>Log out</span></div>
       </div>
       <div class="sidebar-card"><span class="dot"></span><b>Sydney Main</b><br>All systems operational</div>
     </div>
@@ -6590,6 +6661,69 @@ setTimeout(function(){
   const n=ewasteReadyCount();
   if(n>0) showToast('⚠ '+n+' e-waste booking'+(n!==1?'s':'')+' ready to process');
 }, 600);
+
+/* ============================================================
+   LOGIN GATE — cosmetic, client-side only.
+   NOT a real security boundary: the page and its data are
+   fully client-side, so this can be bypassed. Use Cloudflare
+   Access for genuine protection (see DEPLOY.md).
+
+   To change credentials:
+     1. open the browser console on the page
+     2. run:  whosHash('your-new-password')
+     3. paste the result into PASS_HASH below, set USERNAME to taste
+   Default login — username: admin   password: warehouse
+   ============================================================ */
+function whosHash(s){
+  s=String(s); let h1=5381,h2=0;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=((h1<<5)+h1+c)>>>0;h2=(c+(h2<<6)+(h2<<16)-h2)>>>0;}
+  return ('0000000'+h1.toString(16)).slice(-8)+('0000000'+h2.toString(16)).slice(-8);
+}
+const AUTH_USERNAME = 'admin';
+const AUTH_PASS_HASH = 'd787a43807d78d03';      // whosHash('warehouse')
+const AUTH_KEY = 'whos-auth';
+
+function whosLogout(){
+  try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
+  location.reload();
+}
+(function(){
+  const screen=document.getElementById('login-screen');
+  const form=document.getElementById('login-form');
+  const appEl=document.querySelector('.app');
+  const err=document.getElementById('login-error');
+  if(!screen||!form) return;
+
+  function unlock(){
+    try{ sessionStorage.setItem(AUTH_KEY,'1'); }catch(e){}
+    screen.hidden=true;
+    if(appEl) appEl.inert=false;
+    document.body.style.overflow='';
+  }
+  function lock(){
+    screen.hidden=false;
+    if(appEl) appEl.inert=true;
+    document.body.style.overflow='hidden';
+    const u=document.getElementById('login-user'); if(u) setTimeout(()=>u.focus(),0);
+  }
+
+  let authed=false;
+  try{ authed=sessionStorage.getItem(AUTH_KEY)==='1'; }catch(e){}
+  if(authed) unlock(); else lock();
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const u=document.getElementById('login-user').value.trim();
+    const p=document.getElementById('login-pass').value;
+    if(u===AUTH_USERNAME && whosHash(p)===AUTH_PASS_HASH){
+      err.classList.remove('show');
+      unlock();
+    } else {
+      err.classList.add('show');
+      const pf=document.getElementById('login-pass'); pf.value=''; pf.focus();
+    }
+  });
+})();
 </script>
 </body>
 </html>
