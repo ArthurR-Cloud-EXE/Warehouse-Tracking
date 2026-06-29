@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WarehouseOS — Tracking Platform</title>
+
+<!-- Fonts: Inter for UI, JetBrains Mono for IDs / serials / SKUs -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Tabler icon font referenced throughout the markup -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/tabler-icons.min.css">
+
+<script>
+// Apply theme before paint to avoid a flash. Saved choice wins, else follow the OS.
+(function(){
+  var saved=null;
+  try{saved=localStorage.getItem('whos-theme')}catch(e){}
+  var dark = saved ? saved==='dark'
+    : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if(dark) document.documentElement.setAttribute('data-theme','dark');
+})();
+</script>
+
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   These were previously undefined, which is why the page fell
+   back to bare browser defaults. Defining them here gives the
+   whole interface its palette, type, and surface system.
+   ============================================================ */
+:root{
+  /* Type */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Surfaces — cool, neutral, slightly layered for depth */
+  --color-background-primary: #ffffff;     /* panels, cards, rows */
+  --color-background-secondary: #f4f6f9;   /* sidebar, table heads, insets */
+  --color-background-tertiary: #eef1f6;    /* app canvas behind content */
+
+  /* Text */
+  --color-text-primary: #161a20;
+  --color-text-secondary: #5a6573;
+  --color-text-tertiary: #98a2b3;
+
+  /* Borders — hairlines that read crisp on light surfaces */
+  --color-border-tertiary: #e6eaf0;
+  --color-border-secondary: #d3dae3;
+
+  /* Brand accent */
+  --accent: #1f6feb;
+  --accent-deep: #0e4fa8;
+  --accent-wash: #e8f1fe;
+
+  /* Radii */
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(20,28,46,.05);
+  --shadow-md: 0 4px 14px -4px rgba(20,28,46,.12), 0 2px 6px -2px rgba(20,28,46,.06);
+  --shadow-lg: 0 18px 48px -12px rgba(20,28,46,.28);
+
+  /* Status pill colors — themed so they stay legible in both modes */
+  --badge-blue-bg:#e7f0fd;  --badge-blue-fg:#1257b0;
+  --badge-green-bg:#e4f4e9; --badge-green-fg:#1d7a45;
+  --badge-amber-bg:#fbeed6; --badge-amber-fg:#945007;
+  --badge-red-bg:#fce8e8;   --badge-red-fg:#b4302f;
+  --badge-gray-bg:#eef0f4;  --badge-gray-fg:#525c6b;
+
+  /* Sidebar hover + topbar (differ per theme) */
+  --nav-hover:#e7ecf3;
+  --topbar-bg:rgba(255,255,255,.82);
+}
+
+/* ============================================================
+   DARK THEME — a deep slate identity, not a flat inversion.
+   Applied when <html data-theme="dark">.
+   ============================================================ */
+html[data-theme="dark"]{
+  --color-background-primary:#161d2b;
+  --color-background-secondary:#1b2433;
+  --color-background-tertiary:#0e1420;
+
+  --color-text-primary:#e8edf4;
+  --color-text-secondary:#9aa6b8;
+  --color-text-tertiary:#65728a;
+
+  --color-border-tertiary:#27313f;
+  --color-border-secondary:#34415a;
+
+  --accent:#4f8ff7;
+  --accent-deep:#3b82f6;
+  --accent-wash:rgba(79,143,247,.16);
+
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 6px 18px -6px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.4);
+  --shadow-lg:0 22px 60px -14px rgba(0,0,0,.7);
+
+  --badge-blue-bg:rgba(79,143,247,.18);  --badge-blue-fg:#83b1fb;
+  --badge-green-bg:rgba(45,170,109,.18); --badge-green-fg:#5fd49a;
+  --badge-amber-bg:rgba(217,148,46,.20); --badge-amber-fg:#e7b15f;
+  --badge-red-bg:rgba(229,84,84,.18);    --badge-red-fg:#f0908f;
+  --badge-gray-bg:rgba(148,163,184,.16); --badge-gray-fg:#a9b5c7;
+
+  --nav-hover:#212c3d;
+  --topbar-bg:rgba(22,29,43,.82);
+  color-scheme:dark;
+}
+
+/* Smooth the transition when flipping themes */
+body,.sidebar,.section,.stat,.topbar,.modal,.detail-panel,.table th,.nav-item,.field input,.field select,.search,.badge,.dl,.sidebar-card{
+  transition:background-color .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{height:100%}
+body{
+  font-family:var(--font-sans);
+  color:var(--color-text-primary);
+  background:var(--color-background-tertiary);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  font-size:14px;
+  line-height:1.45;
+}
+
+::selection{background:var(--accent-wash);color:var(--accent-deep)}
+
+/* ---------- Layout shell ---------- */
+.app{display:flex;height:100vh;min-height:600px}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:224px;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  padding:0 0 .75rem;
+  background:var(--color-background-secondary);
+  border-right:1px solid var(--color-border-tertiary);
+}
+.logo{
+  display:flex;flex-direction:column;
+  padding:1.15rem 1.15rem 1rem;
+  margin-bottom:.5rem;
+  font-size:15px;font-weight:700;letter-spacing:-.01em;
+  border-bottom:1px solid var(--color-border-tertiary);
+}
+.logo .mark{display:flex;align-items:center;gap:9px;color:var(--color-text-primary)}
+.logo .mark i{
+  width:26px;height:26px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,var(--accent),var(--accent-deep));
+  color:#fff;font-size:16px;box-shadow:var(--shadow-sm);
+}
+.logo span{
+  color:var(--color-text-tertiary);font-size:11px;display:block;
+  font-weight:500;margin-top:5px;text-transform:uppercase;letter-spacing:.07em;
+  padding-left:35px;
+}
+.nav-group{padding:0 .6rem;display:flex;flex-direction:column;gap:2px}
+.nav-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--color-text-tertiary);padding:.6rem .55rem .3rem;
+}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:8px 10px;font-size:13.5px;font-weight:500;cursor:pointer;
+  color:var(--color-text-secondary);
+  border-radius:var(--border-radius-md);
+  transition:background .12s ease,color .12s ease;
+}
+.nav-item:hover{background:var(--nav-hover);color:var(--color-text-primary)}
+.nav-item.active{
+  background:var(--color-background-primary);
+  color:var(--accent-deep);font-weight:600;
+  box-shadow:var(--shadow-sm);
+}
+.nav-item.active i{color:var(--accent)}
+.nav-item i{font-size:18px;color:var(--color-text-tertiary);transition:color .12s ease}
+.nav-item:hover i{color:var(--color-text-secondary)}
+.sidebar-foot{margin-top:auto;padding:0 .6rem}
+.sidebar-card{
+  margin:.75rem .15rem 0;padding:.75rem .85rem;
+  background:var(--color-background-primary);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-md);
+  font-size:11.5px;color:var(--color-text-secondary);
+}
+.sidebar-card b{color:var(--color-text-primary);font-weight:600}
+.sidebar-card .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#3aa76d;margin-right:6px;vertical-align:middle}
+
+/* ---------- Main ---------- */
+.main{flex:1;overflow-y:auto;background:var(--color-background-tertiary)}
+.topbar{
+  padding:.85rem 1.5rem;
+  border-bottom:1px solid var(--color-border-tertiary);
+  display:flex;align-items:center;gap:14px;
+  background:var(--topbar-bg);backdrop-filter:saturate(180%) blur(8px);
+  position:sticky;top:0;z-index:10;
+}
+.topbar h1{font-size:17px;font-weight:600;letter-spacing:-.01em;flex:1}
+.search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--color-background-secondary);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-md);
+  padding:7px 12px;width:280px;transition:border-color .12s ease,box-shadow .12s ease;
+}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.search input{border:none;background:transparent;font-size:13.5px;outline:none;color:var(--color-text-primary);width:100%;font-family:var(--font-sans)}
+.search input::placeholder{color:var(--color-text-tertiary)}
+.search i{color:var(--color-text-tertiary);font-size:17px}
+
+/* ---------- Buttons ---------- */
+.btn{
+  padding:8px 14px;border-radius:var(--border-radius-md);
+  font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-sans);border:1px solid transparent;
+  transition:background .12s ease,border-color .12s ease,box-shadow .12s ease,transform .05s ease;
+}
+.btn:active{transform:translateY(1px)}
+.btn i{font-size:16px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow-sm)}
+.btn-primary:hover{background:var(--accent-deep)}
+.btn-outline{background:var(--color-background-primary);border-color:var(--color-border-secondary);color:var(--color-text-primary)}
+.btn-outline:hover{background:var(--color-background-secondary);border-color:var(--color-text-tertiary)}
+/* ---- Theme toggle : a clearly interactive segmented control ---- */
+.theme-toggle{
+  display:inline-flex;align-items:center;flex-shrink:0;gap:2px;padding:3px;
+  background:var(--color-background-secondary);
+  border:1px solid var(--color-border-secondary);
+  border-radius:999px;
+}
+.theme-toggle button{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:30px;padding:0 13px;border:none;background:transparent;
+  color:var(--color-text-secondary);font-family:var(--font-sans);
+  font-size:12.5px;font-weight:600;cursor:pointer;border-radius:999px;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease;
+}
+.theme-toggle button i{font-size:16px}
+.theme-toggle button:hover{color:var(--color-text-primary)}
+.theme-toggle button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.theme-toggle button.on{
+  background:var(--color-background-primary);
+  color:var(--accent-deep);
+  box-shadow:var(--shadow-sm);
+}
+.theme-toggle button.on i{color:var(--accent)}
+html[data-theme="dark"] .theme-toggle button.on{color:var(--color-text-primary)}
+
+/* ---------- Content ---------- */
+.content{padding:1.5rem;max-width:1400px}
+
+/* ---------- Stat cards ---------- */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+.stat{
+  position:relative;
+  background:var(--color-background-primary);
+  border:1px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-lg);
+  padding:1.05rem 1.15rem;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease;
+}
+.stat:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--color-border-secondary)}
+.stat-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:8px;font-weight:500}
+.stat-value{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.stat-sub{font-size:11.5px;color:var(--color-text-tertiary);margin-top:6px}
+
+/* ---------- Badges / status pills ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.005em;line-height:1.4}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+.badge-blue{background:var(--badge-blue-bg);color:var(--badge-blue-fg)}
+.badge-green{background:var(--badge-green-bg);color:var(--badge-green-fg)}
+.badge-amber{background:var(--badge-amber-bg);color:var(--badge-amber-fg)}
+.badge-red{background:var(--badge-red-bg);color:var(--badge-red-fg)}
+.badge-gray{background:var(--badge-gray-bg);color:var(--badge-gray-fg)}
+
+/* ---------- Sections / tables ---------- */
+.section{
+  background:var(--color-background-primary);
+  border-radius:var(--border-radius-lg);
+  border:1px solid var(--color-border-tertiary);
+  box-shadow:var(--shadow-sm);
+  margin-bottom:1.5rem;overflow:hidden;
+}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--color-border-tertiary)}
+.section-header h2{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.section-count{font-size:12px;color:var(--color-text-tertiary);font-weight:500}
+
+.table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.table th{
+  text-align:left;padding:9px 1.25rem;font-size:10.5px;font-weight:600;
+  color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;
+  border-bottom:1px solid var(--color-border-tertiary);background:var(--color-background-secondary);
+}
+.table td{padding:11px 1.25rem;border-bottom:1px solid var(--color-border-tertiary);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table tbody tr{transition:background .1s ease}
+.table tr:last-child td{border-bottom:none}
+.table tbody tr:hover td{background:var(--color-background-secondary)}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--color-text-secondary);letter-spacing:-.01em}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--color-border-tertiary)}
+.tab{padding:10px 1.25rem;font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--color-text-primary)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* ---------- Modal ---------- */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(16,22,34,.5);backdrop-filter:blur(2px);z-index:100;align-items:center;justify-content:center;animation:fade .15s ease}
+.modal-bg.open{display:flex}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:1px solid var(--color-border-tertiary);box-shadow:var(--shadow-lg);padding:1.5rem;width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;animation:pop .18s cubic-bezier(.2,.7,.3,1)}
+.modal h2{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:1.35rem}
+.field{margin-bottom:1rem}
+.field label{font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:6px;font-weight:600}
+.field input,.field select,.field textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-md);font-size:13px;font-family:var(--font-sans);
+  background:var(--color-background-primary);color:var(--color-text-primary);
+  transition:border-color .12s ease,box-shadow .12s ease;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.field textarea{min-height:80px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.newcat-row{display:none;gap:8px;margin-top:8px}
+.newcat-row.open{display:flex}
+.newcat-row input{flex:1}
+.newcat-add{white-space:nowrap;flex-shrink:0}
+.hint{font-size:11.5px;color:var(--color-text-tertiary);margin-top:6px;line-height:1.4}
+.gen-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.gen-row input[type=number]{width:84px;flex:none}
+.gen-row input[type=text]{flex:1}
+.gen-row .btn{flex-shrink:0;white-space:nowrap}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--color-border-tertiary)}
+
+/* ---------- Timeline ---------- */
+.timeline{padding:.5rem .25rem}
+.timeline-item{display:flex;gap:13px;padding-bottom:1.25rem;position:relative}
+.timeline-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:2px;width:2px;background:var(--color-border-tertiary)}
+.timeline-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--color-background-primary);color:var(--color-text-tertiary);z-index:1}
+.timeline-dot.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.timeline-dot.active{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-wash)}
+.timeline-dot i{font-size:15px}
+.timeline-content{flex:1;padding-top:5px}
+.timeline-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.timeline-meta{font-size:12px;color:var(--color-text-secondary)}
+
+/* ---------- Filters ---------- */
+.filter-bar{display:flex;gap:8px;padding:.75rem 1.25rem;border-bottom:1px solid var(--color-border-tertiary);flex-wrap:wrap}
+.filter-btn{padding:5px 13px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);font-family:var(--font-sans)}
+.filter-btn.active{background:var(--accent-wash);color:var(--accent-deep);border-color:#9fc3f5}
+
+.empty{text-align:center;padding:3rem;color:var(--color-text-tertiary);font-size:14px}
+
+/* ---------- Detail panel ---------- */
+.detail-panel{display:none;position:fixed;right:0;top:0;bottom:0;width:380px;max-width:92vw;background:var(--color-background-primary);border-left:1px solid var(--color-border-tertiary);box-shadow:var(--shadow-lg);z-index:50;overflow-y:auto;padding:1.5rem;animation:slidein .2s cubic-bezier(.2,.7,.3,1)}
+.detail-panel.open{display:block}
+@keyframes slidein{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+.detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.detail-header h2{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.detail-header .btn{padding:6px 9px}
+.detail-close{
+  width:34px;height:34px;padding:0;flex-shrink:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;cursor:pointer;
+  background:var(--color-background-secondary);
+  border:1px solid var(--color-border-secondary);
+  color:var(--color-text-primary);
+  transition:background .12s ease,color .12s ease,border-color .12s ease;
+}
+.detail-close i{font-size:20px;line-height:1}
+.detail-close:hover{background:var(--badge-red-bg);color:var(--badge-red-fg);border-color:transparent}
+.detail-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:13px;margin-bottom:1.5rem;padding:1rem;background:var(--color-background-secondary);border-radius:var(--border-radius-md)}
+.dt{color:var(--color-text-secondary);white-space:nowrap;font-weight:500}
+.dd{color:var(--color-text-primary);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.detail-subhead{font-size:11px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+
+/* Tracking link block */
+.track-link{margin-bottom:1.5rem}
+.track-url{display:block;font-size:12px;color:var(--accent);word-break:break-all;line-height:1.5;margin-bottom:10px;text-decoration:none}
+.track-url:hover{text-decoration:underline}
+.track-actions{display:flex;gap:8px}
+.track-actions .btn{font-size:12px}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);background:var(--color-text-primary);color:var(--color-background-primary);padding:10px 18px;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:200}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- Focus visibility (a11y) ---------- */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.nav-item:focus-visible,.stat:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- Responsive ---------- */
+@media(max-width:860px){
+  .sidebar{width:64px}
+  .logo span,.nav-item span,.nav-label,.sidebar-card{display:none}
+  .logo{align-items:center;padding:1.15rem .5rem}
+  .logo .mark{gap:0}
+  .nav-item{justify-content:center;padding:10px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .search{width:auto;flex:1}
+}
+@media(max-width:520px){
+  .stats-row{grid-template-columns:1fr 1fr;gap:10px}
+  .content{padding:1rem}
+  .topbar h1{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Warehouse tracking system for serial numbers, item tracking, and courier shipments</h2>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="logo">
+      <div class="mark"><i class="ti ti-building-warehouse" aria-hidden="true"></i>WarehouseOS</div>
+      <span>Tracking Platform</span>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Operations</div>
+      <div class="nav-item active" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
+      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span></div>
+      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span></div>
+      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
+      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
+    </div>
+    <div class="sidebar-foot">
+      <div class="nav-group">
+        <div class="nav-label">System</div>
+        <div class="nav-item" tabindex="0" role="button" onclick="switchPage('settings')" onkeydown="if(event.key==='Enter')switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+      </div>
+      <div class="sidebar-card"><span class="dot"></span><b>Sydney Main</b><br>All systems operational</div>
+    </div>
+  </div>
+
+  <div class="main" id="main-area">
+    <div class="topbar">
+      <h1 id="page-title">Items</h1>
+      <div class="search"><i class="ti ti-search" aria-hidden="true"></i><input type="text" id="global-search" placeholder="Search by name, serial, tracking…" oninput="handleSearch()" aria-label="Search"></div>
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button type="button" id="theme-light" onclick="setTheme('light')" aria-pressed="true" title="Light mode"><i class="ti ti-sun" aria-hidden="true"></i>Light</button>
+        <button type="button" id="theme-dark" onclick="setTheme('dark')" aria-pressed="false" title="Dark mode"><i class="ti ti-moon" aria-hidden="true"></i>Dark</button>
+      </div>
+      <button class="btn btn-primary" id="add-btn" onclick="openAddModal()"><i class="ti ti-plus" aria-hidden="true"></i><span id="add-label">Add item</span></button>
+    </div>
+    <div class="content" id="page-content"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <h2 id="modal-title">Add item</h2>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <h2 id="detail-title">Detail</h2>
+    <button class="detail-close" onclick="closeDetail()" aria-label="Close detail" title="Close"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+  </div>
+  <div id="detail-body"></div>
+</div>
+
+<script>
+let currentPage = 'items';
+let searchTerm = '';
+
+const state = {
+  items: [
+    {id:'ITM-001',name:'Laptop 15" Pro',sku:'LP-15-PRO',category:'Electronics',location:'A1-03',qty:12,status:'In stock'},
+    {id:'ITM-002',name:'Wireless Keyboard',sku:'WK-BLK-01',category:'Peripherals',location:'B2-11',qty:45,status:'In stock'},
+    {id:'ITM-003',name:'USB-C Hub 7-port',sku:'UC-HUB-7P',category:'Accessories',location:'C3-05',qty:3,status:'Low stock'},
+    {id:'ITM-004',name:'Monitor 27" 4K',sku:'MN-27-4K',category:'Electronics',location:'A2-01',qty:0,status:'Out of stock'},
+    {id:'ITM-005',name:'Office Chair Ergonomic',sku:'OC-ERG-BL',category:'Furniture',location:'D1-02',qty:8,status:'In stock'},
+  ],
+  serials: [
+    {sn:'SN-2024-78421',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Order #10231',status:'Shipped',location:'In transit'},
+    {sn:'SN-2024-78422',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Stock',status:'In stock',location:'A1-03'},
+    {sn:'SN-2024-81009',item:'Monitor 27" 4K',itemId:'ITM-004',assigned:'Order #10198',status:'Delivered',location:'Customer'},
+    {sn:'SN-2024-55012',item:'USB-C Hub 7-port',itemId:'ITM-003',assigned:'Order #10245',status:'Processing',location:'A1-03'},
+    {sn:'SN-2024-33100',item:'Wireless Keyboard',itemId:'ITM-002',assigned:'Stock',status:'In stock',location:'B2-11'},
+  ],
+  couriers: [
+    {id:'TRK-90012',courier:'FedEx',service:'Express',origin:'Sydney Warehouse',dest:'Melbourne, VIC',status:'In transit',eta:'27 Jun 2026',items:['SN-2024-78421'],updated:'26 Jun 12:34',salesOrder:'SO-44021',ticket:'TKT-1184'},
+    {id:'TRK-90008',courier:'Australia Post',service:'Standard',origin:'Sydney Warehouse',dest:'Brisbane, QLD',status:'Delivered',eta:'24 Jun 2026',items:['SN-2024-81009'],updated:'24 Jun 09:10',salesOrder:'SO-43997',ticket:'TKT-1170'},
+    {id:'TRK-90015',courier:'DHL',service:'Same Day',origin:'Sydney Warehouse',dest:'Parramatta, NSW',status:'Out for delivery',eta:'26 Jun 2026',items:['SN-2024-55012'],updated:'26 Jun 08:55',salesOrder:'SO-44033',ticket:'TKT-1190'},
+    {id:'TRK-90018',courier:'StarTrack',service:'Express',origin:'Sydney Warehouse',dest:'Perth, WA',status:'Processing',eta:'28 Jun 2026',items:[],updated:'26 Jun 07:00',salesOrder:'SO-44040',ticket:''},
+  ],
+  movements: [
+    {id:'MOV-441',type:'Outbound',item:'Laptop 15" Pro',sn:'SN-2024-78421',from:'A1-03',to:'Dispatch',by:'Blooms The Chemist Padstow',date:'26 Jun 14:10'},
+    {id:'MOV-440',type:'Inbound',item:'Wireless Keyboard',sn:'SN-2024-33100',from:'Receiving',to:'B2-11',by:'Blooms The Chemist Gordon',date:'26 Jun 11:05'},
+    {id:'MOV-439',type:'Transfer',item:'USB-C Hub 7-port',sn:'SN-2024-55012',from:'C3-07',to:'A1-03',by:'Blooms The Chemist Windsor',date:'25 Jun 16:30'},
+    {id:'MOV-438',type:'Outbound',item:'Monitor 27" 4K',sn:'SN-2024-81009',from:'A2-01',to:'Dispatch',by:'Blooms The Chemist Mount Ommaney',date:'23 Jun 09:00'},
+  ]
+};
+
+const itemStatuses = ['In stock','Low stock','Out of stock','Reserved'];
+const courierStatuses = ['Processing','In transit','Out for delivery','Delivered','Failed'];
+const courierNames = ['FedEx','Australia Post','DHL','StarTrack','Toll','TNT'];
+const movTypes = ['Inbound','Outbound','Transfer'];
+const categories = ['Electronics','Peripherals','Accessories','Furniture','Other'];
+
+// Stores that movements can be attributed to, grouped by client.
+// BSO = Blooms The Chemist network (verified store locations).
+// CC  = second client — replace the placeholders with the real CC store list.
+const clientStores = {
+  'BSO': [
+    {n:'Blooms The Chemist Albury',a:'491 Townsend Street, Albury, NSW 2640, Australia',p:'02 6021 3255',e:'albury@blooms.net.au'},
+    {n:'Blooms The Chemist Albury West End',a:'Shop FC007 & SP008 West End Plaza, 487 Kiewa Street, Albury, NSW 2640, Australia',p:'02 6021 3713',e:'alburywestend@blooms.net.au'},
+    {n:'Blooms The Chemist Applecross Medical',a:'Woolworths Centre, Shop C01 39 Reynolds Road, Mt Pleasant, WA 6153, Australia',p:'08 9315 5131',e:'applecrossmedical@blooms.net.au'},
+    {n:'Blooms The Chemist Ararat',a:'137 Barkly Street, Ararat VIC 3377',p:'(03) 5352 1114',e:'ararat@blooms.net.au'},
+    {n:'Blooms The Chemist Bakewell',a:'Shop 8, 1 Mannikan Court, Bakewell NT 0832',p:'08 8931 0678',e:'bakewell@blooms.net.au'},
+    {n:'Blooms The Chemist Baldivis (Woolworths/Aldi entry)',a:'Shop 43 Stockland Centre Safety Bay Road, Baldivis WA 6171',p:'(08) 9523 0006',e:'baldivis@blooms.net.au'},
+    {n:'Blooms The Chemist Baldivis Stockland (Coles entry)',a:'Shop 17/20 Settlers Avenue, Baldivis, Western Australia, 6171',p:'(08) 9524 3803',e:'baldivisstockland@blooms.net.au'},
+    {n:'Blooms The Chemist Ballarat North',a:'Shop 8 1113 Doveton Street, North Ballarat VIC 3350',p:'03 5331 2578',e:'ballaratnorth@blooms.net.au'},
+    {n:'Blooms The Chemist Ballina',a:'Shop 68, Ballina Fair, Cnr Fox & Kerr Street, Ballina, NSW 2478, Australia',p:'02 6686 9202',e:'ballina@blooms.net.au'},
+    {n:'Blooms The Chemist Banora Point',a:'Shop 4, Banora Central Shopping Centre, 275 Fraser Drive, Banora Point, NSW 2486, Australia',p:'07 5524 2166',e:'banorapoint@blooms.net.au'},
+    {n:'Blooms The Chemist Bathurst',a:'Shop 18, 121 Howick Street, Bathurst, NSW 2795, Australia',p:'02 6331 9033',e:'bathurststockland@blooms.net.au'},
+    {n:'Blooms The Chemist Bathurst Chase',a:'Shop 25B, Bathurst Chase Shopping Centre, 39-41 William Street, Bathurst, NSW 2795, Australia',p:'02 6331 2599',e:'bathurstchase@blooms.net.au'},
+    {n:'Blooms The Chemist Belmont Central',a:'Shop T 7/8 Belmont Central, 5 Singleton Street, Belmont, NSW 2280, Australia',p:'02 4945 4927',e:'belmont@blooms.net.au'},
+    {n:'Blooms The Chemist Belmont Citi',a:'Shop 25 Belmont Citi Centre, Macquarie Street, Belmont, NSW 2280, Australia',p:'02 4945 8878',e:'belmontciti@blooms.net.au'},
+    {n:'Blooms The Chemist Bondi Junction',a:'Shop 5, 8 & 9 Eastgate Shopping Centre, 71-91 Spring Street, Bondi Junction, NSW 2022, Australia',p:'02 9300 1000',e:'bondijunction@blooms.net.au'},
+    {n:'Blooms The Chemist Bull Creek',a:'Shop 7, Stockland Bull Creek Shopping Centre, South Street, Bull Creek, WA 6149, Australia',p:'08 9332 3777',e:'bullcreek@blooms.net.au'},
+    {n:'Blooms The Chemist Bundaberg',a:'Shop 406, Sugarland Plaza, 115 Takalvan Street, Bundaberg, QLD 4670, Australia',p:'07 4152 5088',e:'bundaberg@blooms.net.au'},
+    {n:'Blooms The Chemist Burwood',a:'Shop 46-47 Burwood Plaza, 46 Railway Parade, Burwood, NSW 2134, Australia',p:'02 9744 9508',e:'burwood@blooms.net.au'},
+    {n:'Blooms The Chemist Camberwell',a:'Shop 2, 660 Burke Road, Camberwell Victoria, 3124',p:'(03) 9882 1292',e:'camberwell@blooms.net.au'},
+    {n:'Blooms The Chemist Campbell Town',a:'Shop 3/119 High St, Campbell Town, TAS 7210',p:'(03) 6381 1242',e:'campbelltown@blooms.net.au'},
+    {n:'Blooms The Chemist Casey Central',a:'Shop 132-134 Casey Central Shopping Centre, 400 Narre Warren Cranbourne Road, Narre Warren South, VIC 3805, Australia',p:'03 9704 8166',e:'casey@blooms.net.au'},
+    {n:'Blooms The Chemist Castle Plaza',a:'Shop 4-7 Castle Plaza Shopping Centre, 992 South Road, Edwardstown SA 5039',p:'(08) 8277 1511',e:'castleplaza@blooms.net.au'},
+    {n:'Blooms The Chemist Colac',a:'Shop 2, 2-52 Bromfield Street Colac, VIC 3250',p:'(03) 5231 4022',e:'colac@blooms.net.au'},
+    {n:'Blooms The Chemist Coogee',a:'202-204 Coogee Bay Road, Coogee, NSW 2034, Australia',p:'02 9665 5158',e:'coogee@blooms.net.au'},
+    {n:'Blooms The Chemist Cranbourne',a:'Shop 123 Cranbourne Park Shopping Centre, High Street, Cranbourne, VIC 3977, Australia',p:'03 5996 2254',e:'cranbourne@blooms.net.au'},
+    {n:'Blooms The Chemist Cronulla',a:'37 Cronulla Street, Cronulla, NSW 2230, Australia',p:'02 9523 6877',e:'cronulla@blooms.net.au'},
+    {n:'Blooms The Chemist Cronulla South',a:'Shop 2, 26 Ewos Parade, Cronulla, NSW 2230, Australia',p:'02 9527 1777',e:'cronullasouth@blooms.net.au'},
+    {n:'Blooms The Chemist Crows Nest',a:'99 Willoughby Road, Crows Nest NSW 2065',p:'(02) 9439 1504',e:'crowsnest@blooms.net.au'},
+    {n:'Blooms The Chemist Dapto',a:'Shop 120-121 Dapto Mall, 75 Princes Highway, Dapto, NSW 2530, Australia',p:'02 4262 2122',e:'dapto@blooms.net.au'},
+    {n:'Blooms The Chemist Darch',a:'Shop 18, 225 Kingsway Road, Darch WA 6065',p:'(08) 9303 9895',e:'darch@blooms.net.au'},
+    {n:'Blooms The Chemist Darwin Galleria',a:'Shop 1 & 2 The Galleria Smith Street Mall 35-37 Smith Street, Darwin NT 0801',p:'(08) 8981 2333',e:'darwingalleria@blooms.net.au'},
+    {n:'Blooms The Chemist Darwin Plaza',a:'Shop 1 Woolworths Complex 47 Cavanagh Street, Darwin NT 0801',p:'(08) 8981 8522',e:'darwinplaza@blooms.net.au'},
+    {n:'Blooms The Chemist Daylesford',a:'39 Vincent Street',p:'(03) 5348 2301',e:'daylesford@blooms.net.au'},
+    {n:'Blooms The Chemist Dianella',a:'Shop 17 Dianella Plaza, 366 Grand Promenade, Dianella, WA 6059, Australia',p:'08 9276 3455',e:'dianella@blooms.net.au'},
+    {n:'Blooms The Chemist Douglas',a:'228-244 Riverside Blvd, Douglas QLD 4814',p:'(07) 4775 3642',e:'douglas@blooms.net.au'},
+    {n:'Blooms The Chemist Dubbo',a:'Shop 15-16a Centro Shopping Centre, 177 Macquarie Street, Dubbo, NSW 2830, Australia',p:'02 6882 4853',e:'dubbo@blooms.net.au'},
+    {n:'Blooms The Chemist Edgecliff',a:'Shop 10 Eastpoint Food Fair, 235 New South Head Road, Edgecliff, NSW 2027, Australia',p:'02 9328 1316',e:'edgecliff@blooms.net.au'},
+    {n:'Blooms The Chemist Erina',a:'Shop T74 Erina Fair, 618 Terrigal Drive, Erina, NSW 2250, Australia',p:'02 4365 1155',e:'erina@blooms.net.au'},
+    {n:'Blooms The Chemist Essendon',a:'1049 Mt Alexander Road, Essendon VIC 3040',p:'(03) 9379 2158',e:'essendon@blooms.net.au'},
+    {n:'Blooms The Chemist Essendon Clinic',a:'1138A Mt Alexander Road, Essendon VIC 3040',p:'(03) 9351 0455',e:'essendonclinic@blooms.net.au'},
+    {n:'Blooms The Chemist Figtree',a:'Shop 12-15 Figtree Grove Shopping Centre, Figtree Crescent, Figtree, NSW 2525, Australia',p:'02 4229 5847',e:'figtree@blooms.net.au'},
+    {n:'Blooms The Chemist Forestville',a:'Shop 1, The Centre, 2 Starkey Street, Forestville, NSW 2087, Australia',p:'02 9451 5051',e:'forestville@blooms.net.au'},
+    {n:'Blooms The Chemist Geraldton Fountains',a:'114 Marine Terrace, Geraldton, WA 6530, Australia',p:'08 9921 1755',e:'geraldton@blooms.net.au'},
+    {n:'Blooms The Chemist Gladesville',a:'Shop 6, Gladesville Shopping Village, Flagstaff Street, Gladesville NSW 2111',p:'(02) 9817 3180',e:'gladesville@blooms.net.au'},
+    {n:'Blooms The Chemist Glenelg',a:'93-95 Jetty Road, Glenelg, South Australia, 5045',p:'(08) 8295 7466',e:'glenelg@blooms.net.au'},
+    {n:'Blooms The Chemist Glenorchy',a:'Shop 14, Glenorchy Shopping Centre, Eady St, Glenorchy TAS 7010',p:'(03) 6272 4313',e:'Glenorchy@blooms.net.au'},
+    {n:'Blooms The Chemist Gordon',a:'765 Pacific Highway, Gordon, NSW 2072, Australia',p:'02 9498 2587',e:'gordon@blooms.net.au'},
+    {n:'Blooms The Chemist Goulburn',a:'220 Auburn Street, Goulburn, NSW 2580, Australia',p:'02 4821 2186',e:'goulburn@blooms.net.au'},
+    {n:'Blooms The Chemist Goulburn Marketplace',a:'Shop 15, The Marketplace, 12-20 Verner Street, Goulburn, NSW 2580, Australia',p:'02 4821 2260',e:'goulburnmarket@blooms.net.au'},
+    {n:'Blooms The Chemist Goulburn Northside',a:'304-308 Auburn Street, Goulburn, NSW 2580, Australia',p:'02 4821 1980',e:'goulburnnorthside@blooms.net.au'},
+    {n:'Blooms The Chemist Grafton',a:'Shop 24 Grafton Shopping World, 54-74 Fitzroy Street, Grafton, NSW 2460, Australia',p:'02 6643 1241',e:'grafton@blooms.net.au'},
+    {n:'Blooms The Chemist Green Hills',a:'Shop 1028 Stockland Green Hills, 1 Molly Morgan Drive, East Maitland, NSW 2323, Australia',p:'02 4934 7078',e:'greenhills@blooms.net.au'},
+    {n:'Blooms The Chemist Griffith',a:'222 Banna Ave, Griffith, NSW 2680, Australia',p:'02 6962 2527',e:'griffith@blooms.net.au'},
+    {n:'Blooms The Chemist High Wycombe',a:'530 Kalamunda Rd, High Wycombe, WA, 6057',p:'08 9454 5798',e:'highwycombe@blooms.net.au'},
+    {n:'Blooms The Chemist Hobart',a:'71 Bathurst St, Hobart TAS 7000, Australia',p:'1800 252 436',e:'hobart@blooms.net.au'},
+    {n:'Blooms The Chemist Huonville',a:'59 Main Street, Huonville, TAS 7109',p:'(03) 6264 1196',e:'huonville@blooms.net.au'},
+    {n:'Blooms The Chemist Huonville Arcade',a:'Shop 6 Huon Arcade, 13 Main Street, Huonville, TAS, 7109',p:'03 6264 2226',e:'huonvillearcade@blooms.net.au'},
+    {n:'Blooms The Chemist Karabar',a:'Shop 6-8 Karabar Shopping Mall, 34 Queenbar Road, Karabar, NSW 2620, Australia',p:'02 6297 3670',e:'karabar@blooms.net.au'},
+    {n:'Blooms The Chemist Kenmore',a:'Shops 9 & 10 Kenmore Plaza Shopping Centre, 841 Moggill Road, Kenmore, QLD 4069, Australia',p:'07 3378 5769',e:'kenmore@blooms.net.au'},
+    {n:'Blooms The Chemist Kiama',a:'118 Terralong Street, Kiama, NSW 2533, Australia',p:'02 4232 1046',e:'kiama@blooms.net.au'},
+    {n:'Blooms The Chemist Kingaroy',a:'Shop 2 Kingaroy Shopping World, 29-45 Alford Street, Kingaroy, QLD 4610, Australia',p:'07 4162 3777',e:'kingaroy@blooms.net.au'},
+    {n:'Blooms The Chemist Kingaroy Town Centre',a:'Shop 6, Kingaroy Town Centre, 8-18 Avoca Street, Kingaroy, QLD 4610, Australia',p:'07 4162 2044',e:'kingaroytc@blooms.net.au'},
+    {n:'Blooms The Chemist Kingsford',a:'512-514 Anzac Parade, Kingsford, NSW 2032, Australia',p:'02 9663 3900',e:'kingsford@blooms.net.au'},
+    {n:'Blooms The Chemist Lakeside',a:'Shop B, 17 Philippine Parade, Palm Beach, QLD 4221, Australia',p:'07 5534 3604',e:'lakeside@blooms.net.au'},
+    {n:'Blooms The Chemist Leichhardt',a:'Shop 46 Leichhardt Market Place, 122 Flood Street, Leichhardt, NSW 2040, Australia',p:'02 9560 9808',e:'leichhardt@blooms.net.au'},
+    {n:'Blooms The Chemist Lismore',a:'Shop 22/62 Wyrallah Road Shopping Centre, Wyrallah Road, East Lismore, NSW 2480, Australia',p:'02 6621 4000',e:'lismore@blooms.net.au'},
+    {n:'Blooms The Chemist Maitland',a:'Shop MM105, Stockland Green Hills, 1 Molly Morgan Drive, East Maitland, NSW 2323, Australia',p:'02 4933 5533',e:'maitland@blooms.net.au'},
+    {n:'Blooms The Chemist Marrickville',a:'251 Marrickville Road, Marrickville, NSW 2204, Australia',p:'02 9560 2350',e:'marrickville@blooms.net.au'},
+    {n:'Blooms The Chemist Mayfield',a:'179 Maitland Road, Mayfield, NSW 2304, Australia',p:'02 4967 2211',e:'mayfield@blooms.net.au'},
+    {n:'Blooms The Chemist Melton',a:'Shop 12, Woodgrove SC, 533-555 High Street, Melton, VIC, 3337',p:'03 9743 6633',e:'melton@blooms.net.au'},
+    {n:'Blooms The Chemist Melton West',a:'Shop 111, Woodgrove SC, 533-555 High St, Melton, VIC, 3337',p:'03 9746 8405',e:'meltonwest@blooms.net.au'},
+    {n:'Blooms The Chemist Miller',a:'Shop 46-47, Miller Central, 90 Cartwright Avenue, Miller, NSW 2168, Australia',p:'02 9607 7204',e:'miller@blooms.net.au'},
+    {n:'Blooms The Chemist Miranda',a:'Shop 2089, Westfield Miranda, 600 Kingsway, Miranda, NSW 2228, Australia',p:'02 9524 7691',e:'miranda@blooms.net.au'},
+    {n:'Blooms The Chemist Mount Ommaney',a:'Shop 1 Mt Ommaney Centre, 171 Dandenong Rd, Mount Ommaney QLD 4074, Australia',p:'(07) 3376 8788',e:'mtommaney@blooms.net.au'},
+    {n:'Blooms The Chemist Mudgee',a:'46-50 Church Street, Mudgee, NSW 2850, Australia',p:'02 6372 4227',e:'mudgee@blooms.net.au'},
+    {n:'Blooms The Chemist Mudgee Southside',a:'Shop 3, 145 Church Street, Mudgee, NSW 2850, Australia',p:'02 6372 9500',e:'mudgeesouthside@blooms.net.au'},
+    {n:'Blooms The Chemist Muswellbrook',a:'Shop 1-4/ 22 Sowerby St, Muswellbrook NSW 2333',p:'(02) 6541 0999',e:'muswellbrook@blooms.net.au'},
+    {n:'Blooms The Chemist Myrtleford Centre',a:'151 Myrtle Street, Myrtleford, VIC 3737',p:'03 5751 1222',e:'myrtlefordcentre@blooms.net.au'},
+    {n:'Blooms The Chemist Myrtleford Clyde Street',a:'43 Clyde Street, Myrtleford, VIC, 3737',p:'03 5752 1288',e:'myrtlefordclydest@blooms.net.au'},
+    {n:'Blooms The Chemist Nambucca Heads',a:'28 Bowra Street, Nambucca Heads NSW 2448',p:'(02) 6568 6065',e:'nambuccaheads@blooms.net.au'},
+    {n:'Blooms The Chemist New Norfolk',a:'6 High Street, New Norfolk, TAS 2640',p:'(03) 6261 2246',e:'newnorfolk@blooms.net.au'},
+    {n:'Blooms The Chemist Northbridge',a:'Northbridge Plaza, Shop 13, 79/113 Sailors Bay Rd, Northbridge NSW 2063',p:'02 9958 8646',e:'northbridge@blooms.net.au'},
+    {n:'Blooms The Chemist Nowra Junction',a:'130 Junction Street, Nowra, NSW 2541, Australia',p:'02 4421 3175',e:'junctionst@blooms.net.au'},
+    {n:'Blooms The Chemist Nowra Mall',a:'Shop 25 Nowra Mall, Kinghorne Street, Nowra, NSW 2541, Australia',p:'02 4421 3946',e:'nowra@blooms.net.au'},
+    {n:'Blooms The Chemist Orange',a:'Shop 19, Orange Metro Plaza Centre, 227 Summer Street, Orange, NSW 2800, Australia',p:'02 6362 1267',e:'orange@blooms.net.au'},
+    {n:'Blooms The Chemist Padstow',a:'57-59 Padstow Parade, Padstow, NSW 2211, Australia',p:'02 9773 9427',e:'padstow@blooms.net.au'},
+    {n:'Blooms The Chemist Parap',a:'Shop 4 Colroy Building, 3 Parap Place, Parap NT 0820',p:'(08) 8981 3421',e:'parap@blooms.net.au'},
+    {n:'Blooms The Chemist Paynesville',a:'65 Esplanade, Paynesville VIC 3880',p:'(03) 5156 6671',e:'paynesville@blooms.net.au'},
+    {n:'Blooms The Chemist Penrith High Street',a:'Shop 3, 535 - 537 High Street, Penrith NSW, 2750',p:'(02) 4724 2050',e:'penrith@blooms.net.au'},
+    {n:'Blooms The Chemist Penrith Nepean',a:'Shop 39, Nepean Village, 122-144 Station Street, Penrith, NSW 2750, Australia',p:'02 4732 1328',e:'penrithnepean@blooms.net.au'},
+    {n:'Blooms The Chemist Port Coogee',a:'Shop T2, Port Coogee Village Shopping Centre, 6 Calypso Parade, North Coogee, WA 6163, Australia',p:'08 6166 4350',e:'portcoogee@blooms.net.au'},
+    {n:'Blooms The Chemist Queanbeyan',a:'Shop 2-3, 183 Crawford Street, Queanbeyan, NSW 2620, Australia',p:'02 6297 1872',e:'queanbeyan@blooms.net.au'},
+    {n:'Blooms The Chemist Raymond Terrace',a:'Shop 17, The Market Place, 35 William Street, Raymond Terrace, NSW 2324, Australia',p:'02 4987 5975',e:'raymondterrace@blooms.net.au'},
+    {n:'Blooms The Chemist Richmond',a:'Shop 45, Richmond Market Place, 46 March Street, Richmond, NSW 2753, Australia',p:'02 4578 1557',e:'richmond@blooms.net.au'},
+    {n:'Blooms The Chemist Rochedale',a:'Shop 5B, Rochedale Village, 329 Gardner Road, Rochedale, QLD 4123, Australia',p:'07 3423 2953',e:'rochedale@blooms.net.au'},
+    {n:'Blooms The Chemist Rosanna',a:'108 Lower Plenty Road, Rosanna, VIC 3084, Australia',p:'03 9458 1912',e:'rosanna@blooms.net.au'},
+    {n:'Blooms The Chemist Rosebud Nepean',a:'Suite 1 & 2/1533 Point Nepean Rd, Capel Sound VIC 3940',p:'03 5986 5405',e:'rosebudnepean@blooms.net.au'},
+    {n:'Blooms The Chemist Rosebud Plaza',a:'Shop 8, Rosebud Plaza, Boneo Road, Capel Sound VIC 3939',p:'03 5986 7299',e:'rosebudplaza@blooms.net.au'},
+    {n:'Blooms The Chemist Royal Randwick',a:'Shop 26, Royal Randwick Shopping Centre, 73 Belmore Road, Randwick, NSW 2031, Australia',p:'02 9398 1999',e:'royalrandwick@blooms.net.au'},
+    {n:'Blooms The Chemist Salamander Bay',a:'Shop 12 Salamander Bay Square, 2 Town Centre Circuit, Salamander Bay, NSW 2317',p:'0249827644',e:'salamander@blooms.net.au'},
+    {n:'Blooms The Chemist Salamander Bay Medical',a:'Suite 4/6 Central Avenue, Salamander Bay, NSW, 2317',p:'024911 2331',e:'salamandermedical@blooms.net.au'},
+    {n:'Blooms The Chemist Saratoga',a:'Shop 11, Saratoga Shopping Village, 11 Village Road, Saratoga, NSW 2251, Australia',p:'02 4369 1494',e:'saratoga@blooms.net.au'},
+    {n:'Blooms The Chemist Sawtell',a:'37 First Avenue, Sawtell, NSW 2452, Australia',p:'02 6653 1227',e:'sawtell@blooms.net.au'},
+    {n:'Blooms The Chemist Shellharbour',a:'Shop 11-12, Stockland Shopping Centre, Lake Entrance Road, Shellharbour, NSW 2529, Australia',p:'02 4296 3355',e:'shellharbour@blooms.net.au'},
+    {n:'Blooms The Chemist Singleton Heights',a:'Shop 4 Blaxland Avenue, Singleton Heights, NSW 2330, Australia',p:'02 6573 1410',e:'singletonheights@blooms.net.au'},
+    {n:'Blooms The Chemist South West Rocks',a:'Shop 9-10, The Rocks Shop Fair, 255-279 Gregory Street, South West Rocks, NSW 2431, Australia',p:'02 6566 6155',e:'southwestrocks@blooms.net.au'},
+    {n:'Blooms The Chemist Springwood',a:'161 Macquarie Road, Springwood, NSW 2777, Australia',p:'02 4751 2963',e:'springwood@blooms.net.au'},
+    {n:'Blooms The Chemist St Helens',a:'40-42 Cecilia St, St Helens TAS 7216',p:'(03) 6376 1374',e:'sthelens@blooms.net.au'},
+    {n:'Blooms The Chemist St Ives',a:'Shop 3-4, St Ives Shopping Village, Cnr: Memorial Ave & Mona Vale Road, St Ives, NSW 2075, Australia',p:'02 9144 6914',e:'stives@blooms.net.au'},
+    {n:'Blooms The Chemist Stud Park',a:'Shop 36, Stud Park Shopping Centre, Rowville VIC 3178',p:'(03) 9764 2933',e:'studpark@blooms.net.au'},
+    {n:'Blooms The Chemist Surry Hills Village',a:'2 Baptist Street, Redfern, NSW, 2016',p:'02 9310 2631',e:'surryhillsvillage@blooms.net.au'},
+    {n:'Blooms The Chemist Taree',a:'2-4 Manning Street, Taree NSW 2430',p:'(02) 6552 1662',e:'taree@blooms.net.au'},
+    {n:'Blooms The Chemist The Pines',a:'Shop 22, The Pines Shopping Centre, KP McGrath Drive & Guineas Creek Rd, Elanora, QLD 4221, Australia',p:'07 5598 1415',e:'thepines@blooms.net.au'},
+    {n:'Blooms The Chemist Toormina',a:'Shop 47 Toormina Gardens Shopping Centre, Toormina, NSW 2452, Australia',p:'02 6653 1444',e:'toormina@blooms.net.au'},
+    {n:'Blooms The Chemist Tweed City Central',a:'Shop 115, Tweed City Shopping Centre, 54 Minjungbal Drive, Tweed Heads South, NSW 2486, Australia',p:'07 5524 4974',e:'tweedcitycentral@blooms.net.au'},
+    {n:'Blooms The Chemist Tweed City Transit Area',a:'Shop 204, Tweed City Shopping Centre, 54 Minjungbal Drive, Tweed Heads South, NSW 2486, Australia',p:'07 5523 3325',e:'tweedcitytransit@blooms.net.au'},
+    {n:'Blooms The Chemist Umina',a:'Shop 6, 286 West Street, Umina Beach, NSW 2257, Australia',p:'02 4341 6906',e:'umina@blooms.net.au'},
+    {n:'Blooms The Chemist Wagga Marketplace',a:'Shop 61, Wagga Market Place, Forsyth Street, Wagga Wagga, NSW 2650, Australia',p:'02 6931 7840',e:'waggamarket@blooms.net.au'},
+    {n:'Blooms The Chemist Wagga Sturt Mall',a:'Shop 13, Sturt Mall, 135 Baylis Street, Wagga Wagga, NSW 2650, Australia',p:'02 6921 2101',e:'waggasturt@blooms.net.au'},
+    {n:'Blooms The Chemist Wareemba',a:'278 Great North Road, Wareemba NSW 2046',p:'(02) 9713 8629',e:'wareemba@blooms.net.au'},
+    {n:'Blooms The Chemist Warilla',a:'Shop MM1 Warilla Grove Shopping Centre, 43 - 57 Shellharbour Road, Warilla, NSW 2528, Australia',p:'02 4295 1233',e:'warilla@blooms.net.au'},
+    {n:'Blooms The Chemist Warrnambool',a:'143-149 Lava Street Warrnambool, VIC, 3280',p:'03 5562 0509',e:'warrnambool@blooms.net.au'},
+    {n:'Blooms The Chemist Windsor',a:'Shop 7, Windsor Marketplace, 6-16 Kable Street, Windsor, NSW 2756, Australia',p:'02 4577 3010',e:'windsor@blooms.net.au'},
+    {n:'Blooms The Chemist Windsor Riverview',a:'Shop 16-17, Riverview Shopping Centre, 227 George Street, Windsor, NSW 2756, Australia',p:'02 4577 3265',e:'windsorriverview@blooms.net.au'},
+    {n:'Blooms The Chemist Woolooware',a:'49 Wills Road, Woolooware NSW 2230',p:'02 9523 5211',e:'woolooware@blooms.net.au'},
+    {n:'Blooms The Chemist Wyong',a:'74 Pacific Highway, Wyong, NSW 2259, Australia',p:'02 4352 1025',e:'wyong@blooms.net.au'},
+    {n:'Blooms The Chemist Yarrawonga',a:'143 Belmore Street, Yarrawonga VIC 3730',p:'03 5744 3089',e:'yarrawonga@blooms.net.au'},
+    {n:'Blooms The Chemist Yarrawonga Lake End',a:'52A, 54 (including part first floor) and 54A Belmore Street, Yarrawonga, VIC 3730',p:'(03) 5744 3035',e:'yarrawongalakeend@blooms.net.au'},
+    {n:'Blooms The Chemist Yarrawonga Woods Road',a:'Pharmacy Tenancy AA, Yarrawonga Medical Clinic, 72 Woods Road, Yarrawonga, VIC 3730',p:'(03) 5744 0111',e:'yarrawongawoodsrd@blooms.net.au'},
+    {n:'Blooms The Chemist Young',a:'46 Boorowa Street, Young, NSW 2594, Australia',p:'02 6382 2009',e:'young@blooms.net.au'},
+  ],
+  'CC': [
+    {n:'CC — Store 1'},
+    {n:'CC — Store 2'},
+    {n:'CC — Store 3'},
+  ],
+};
+// Stores added on the fly are remembered on this device and merged per client.
+(function(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('whos-stores')||'{}');
+    for(const client in saved){
+      if(!clientStores[client]) clientStores[client]=[];
+      const have=new Set(clientStores[client].map(s=>s.n));
+      saved[client].forEach(s=>{ const o=(typeof s==='string')?{n:s}:s; if(o&&o.n&&!have.has(o.n)){ clientStores[client].push(o); have.add(o.n);} });
+    }
+  }catch(e){}
+})();
+function saveCustomStores(){ try{ localStorage.setItem('whos-stores', JSON.stringify(clientStores)); }catch(e){} }
+function storeInfo(name){ for(const c in clientStores){ const m=clientStores[c].find(s=>s.n===name); if(m) return Object.assign({client:c}, m); } return null; }
+function storeOptions(selected){
+  let html='<option value="" disabled'+(selected?'':' selected')+'>Select a store…</option>';
+  for(const client in clientStores){
+    html+=`<optgroup label="${client}">`;
+    html+=clientStores[client].map(s=>`<option${s.n===selected?' selected':''}>${s.n}</option>`).join('');
+    html+='</optgroup>';
+  }
+  html+='<option value="__newstore__">+ Add a store…</option>';
+  return html;
+}
+
+// Custom categories added on the fly are remembered on this device.
+(function(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('whos-categories')||'[]');
+    if(Array.isArray(saved)) saved.forEach(c=>{ if(c && !categories.includes(c)) categories.push(c); });
+  }catch(e){}
+})();
+function saveCategories(){ try{ localStorage.setItem('whos-categories', JSON.stringify(categories)); }catch(e){} }
+function categoryOptions(selected){
+  return categories.map(c=>`<option${c===selected?' selected':''}>${c}</option>`).join('')
+    + '<option value="__new__">+ Add new category…</option>';
+}
+
+// Build a real carrier tracking URL from the courier + tracking ID.
+const trackingUrlBuilders = {
+  'FedEx':          id=>`https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(id)}`,
+  'Australia Post': id=>`https://auspost.com.au/mypost/track/details/${encodeURIComponent(id)}`,
+  'DHL':            id=>`https://www.dhl.com/au-en/home/tracking.html?tracking-id=${encodeURIComponent(id)}`,
+  'StarTrack':      id=>`https://startrack.com.au/track/search?id=${encodeURIComponent(id)}`,
+  'Toll':           id=>`https://www.mytoll.com/?searchType=con&tracking=${encodeURIComponent(id)}`,
+  'TNT':            id=>`https://www.tnt.com/express/en_au/site/tracking.html?cons=${encodeURIComponent(id)}`,
+};
+function trackingLink(c){
+  const build = trackingUrlBuilders[c.courier];
+  return build ? build(c.id) : `https://www.google.com/search?q=${encodeURIComponent(c.courier+' '+c.id+' tracking')}`;
+}
+
+function statusBadge(s){
+  const map={
+    'In stock':'badge-green','Low stock':'badge-amber','Out of stock':'badge-red','Reserved':'badge-blue',
+    'In transit':'badge-blue','Delivered':'badge-green','Processing':'badge-gray','Out for delivery':'badge-amber','Failed':'badge-red',
+    'Shipped':'badge-blue','Inbound':'badge-green','Outbound':'badge-amber','Transfer':'badge-blue'
+  };
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+
+function switchPage(page){
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[['items','serials','couriers','movements','stores','settings'].indexOf(page)].classList.add('active');
+  document.getElementById('page-title').textContent = {items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',stores:'Stores',settings:'Settings'}[page];
+  document.getElementById('add-label').textContent = {items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',stores:'',settings:''}[page];
+  document.getElementById('add-btn').style.display = (page==='settings'||page==='stores')?'none':'flex';
+  closeDetail();
+  render();
+}
+
+let activeFilter = 'all';
+function render(){
+  const q = searchTerm.toLowerCase();
+  const el = document.getElementById('page-content');
+  if(currentPage==='items') renderItems(el,q);
+  else if(currentPage==='serials') renderSerials(el,q);
+  else if(currentPage==='couriers') renderCouriers(el,q);
+  else if(currentPage==='movements') renderMovements(el,q);
+  else if(currentPage==='stores') renderStores(el,q);
+  else renderSettings(el);
+}
+
+function renderItems(el,q){
+  let data = state.items.filter(i=>!q||(i.name+i.sku+i.id+i.category).toLowerCase().includes(q));
+  const inStock=state.items.filter(i=>i.status==='In stock').length;
+  const low=state.items.filter(i=>i.status==='Low stock').length;
+  const out=state.items.filter(i=>i.status==='Out of stock').length;
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Total items</div><div class="stat-value">${state.items.length}</div><div class="stat-sub">SKUs tracked</div></div>
+    <div class="stat"><div class="stat-label">In stock</div><div class="stat-value" style="color:var(--badge-green-fg)">${inStock}</div><div class="stat-sub">Available</div></div>
+    <div class="stat"><div class="stat-label">Low stock</div><div class="stat-value" style="color:var(--badge-amber-fg)">${low}</div><div class="stat-sub">Below threshold</div></div>
+    <div class="stat"><div class="stat-label">Out of stock</div><div class="stat-value" style="color:var(--badge-red-fg)">${out}</div><div class="stat-sub">Needs replenishment</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Inventory</h2><span class="section-count">${data.length} items</span></div>
+    <table class="table">
+      <thead><tr><th style="width:90px">Item ID</th><th style="width:200px">Name</th><th style="width:110px">SKU</th><th style="width:120px">Category</th><th style="width:90px">Location</th><th style="width:60px;text-align:right">Qty</th><th style="width:124px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(i=>`<tr style="cursor:pointer" onclick="showItemDetail('${i.id}')">
+        <td class="mono">${i.id}</td><td style="font-weight:600">${i.name}</td><td class="mono">${i.sku}</td><td>${i.category}</td><td class="mono">${i.location}</td>
+        <td style="text-align:right;font-weight:600">${i.qty}</td><td>${statusBadge(i.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="7"><div class="empty">No items match your search</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderSerials(el,q){
+  let data = state.serials.filter(i=>!q||(i.sn+i.item+i.assigned+i.status).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Registered serials</div><div class="stat-value">${state.serials.length}</div><div class="stat-sub">Units tracked</div></div>
+    <div class="stat"><div class="stat-label">In stock</div><div class="stat-value" style="color:var(--badge-green-fg)">${state.serials.filter(s=>s.status==='In stock').length}</div><div class="stat-sub">On shelf</div></div>
+    <div class="stat"><div class="stat-label">Shipped</div><div class="stat-value" style="color:var(--badge-blue-fg)">${state.serials.filter(s=>s.status==='Shipped').length}</div><div class="stat-sub">En route</div></div>
+    <div class="stat"><div class="stat-label">Delivered</div><div class="stat-value" style="color:var(--badge-gray-fg)">${state.serials.filter(s=>s.status==='Delivered').length}</div><div class="stat-sub">Completed</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Serial number registry</h2><span class="section-count">${data.length} records</span></div>
+    <table class="table">
+      <thead><tr><th style="width:150px">Serial number</th><th style="width:180px">Item</th><th style="width:130px">Assigned to</th><th style="width:110px">Location</th><th style="width:100px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(s=>`<tr style="cursor:pointer" onclick="showSerialDetail('${s.sn}')">
+        <td class="mono">${s.sn}</td><td style="font-weight:500">${s.item}</td><td style="font-size:12px;color:var(--color-text-secondary)">${s.assigned}</td>
+        <td class="mono">${s.location}</td><td>${statusBadge(s.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="5"><div class="empty">No serial numbers match your search</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderCouriers(el,q){
+  let data = state.couriers.filter(i=>!q||(i.id+i.courier+i.dest+i.status).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Total shipments</div><div class="stat-value">${state.couriers.length}</div><div class="stat-sub">Active records</div></div>
+    <div class="stat"><div class="stat-label">In transit</div><div class="stat-value" style="color:var(--badge-blue-fg)">${state.couriers.filter(c=>c.status==='In transit').length}</div><div class="stat-sub">On the road</div></div>
+    <div class="stat"><div class="stat-label">Out for delivery</div><div class="stat-value" style="color:var(--badge-amber-fg)">${state.couriers.filter(c=>c.status==='Out for delivery').length}</div><div class="stat-sub">Last mile</div></div>
+    <div class="stat"><div class="stat-label">Delivered</div><div class="stat-value" style="color:var(--badge-green-fg)">${state.couriers.filter(c=>c.status==='Delivered').length}</div><div class="stat-sub">Completed</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Shipments</h2><span class="section-count">${data.length} shipments</span></div>
+    <table class="table">
+      <thead><tr><th style="width:100px">Tracking ID</th><th style="width:120px">Courier</th><th style="width:90px">Service</th><th style="width:170px">Destination</th><th style="width:100px">ETA</th><th style="width:120px">Status</th></tr></thead>
+      <tbody>${data.length?data.map(c=>`<tr style="cursor:pointer" onclick="showCourierDetail('${c.id}')">
+        <td class="mono">${c.id}</td><td style="font-weight:600">${c.courier}</td><td style="font-size:12px;color:var(--color-text-secondary)">${c.service}</td>
+        <td>${c.dest}</td><td style="font-size:12px">${c.eta}</td><td>${statusBadge(c.status)}</td>
+      </tr>`).join(''):'<tr><td colspan="6"><div class="empty">No shipments match your search</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderMovements(el,q){
+  let data = state.movements.filter(i=>!q||(i.id+i.item+i.sn+i.type).toLowerCase().includes(q));
+  el.innerHTML=`
+  <div class="section">
+    <div class="section-header"><h2>Movement log</h2><span class="section-count">${data.length} entries</span></div>
+    <table class="table">
+      <thead><tr><th style="width:80px">Move ID</th><th style="width:80px">Type</th><th style="width:150px">Item</th><th style="width:130px">Serial</th><th style="width:70px">From</th><th style="width:70px">To</th><th style="width:210px">Moved by (store)</th><th style="width:110px">Date</th></tr></thead>
+      <tbody>${data.length?data.map(m=>`<tr>
+        <td class="mono">${m.id}</td><td>${statusBadge(m.type)}</td><td>${m.item}</td><td class="mono">${m.sn}</td>
+        <td class="mono">${m.from}</td><td class="mono">${m.to}</td>
+        <td style="font-size:12px" title="${(()=>{const i=storeInfo(m.by);return i?`${m.by}\n${i.a||''}\n${i.p||''}  ${i.e||''}`.trim():m.by;})()}">${m.by}</td><td style="font-size:12px;color:var(--color-text-secondary)">${m.date}</td>
+      </tr>`).join(''):'<tr><td colspan="8"><div class="empty">No movements match your search</div></td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderStores(el,q){
+  const clients=Object.keys(clientStores);
+  const total=clients.reduce((n,c)=>n+clientStores[c].length,0);
+  let filteredTotal=0, sections='';
+  clients.forEach(c=>{
+    const list=clientStores[c].filter(s=>!q||((s.n||'')+(s.a||'')+(s.p||'')+(s.e||'')).toLowerCase().includes(q));
+    filteredTotal+=list.length;
+    sections+=`<div class="section">
+      <div class="section-header"><h2>${c}</h2><span class="section-count">${list.length} store${list.length!==1?'s':''}</span></div>
+      <table class="table">
+        <thead><tr><th style="width:240px">Store</th><th>Address</th><th style="width:130px">Phone</th><th style="width:215px">Email</th></tr></thead>
+        <tbody>${list.length?list.map(s=>`<tr>
+          <td style="font-weight:600" title="${(s.n||'').replace(/"/g,'&quot;')}">${s.n||''}</td>
+          <td style="font-size:12px;color:var(--color-text-secondary)" title="${(s.a||'').replace(/"/g,'&quot;')}">${s.a||'—'}</td>
+          <td class="mono">${s.p?`<a href="tel:${(s.p||'').replace(/[^+\\d]/g,'')}" style="color:inherit;text-decoration:none">${s.p}</a>`:'—'}</td>
+          <td style="font-size:12px">${s.e?`<a href="mailto:${s.e}" style="color:var(--accent);text-decoration:none" title="${s.e}">${s.e}</a>`:'—'}</td>
+        </tr>`).join(''):`<tr><td colspan="4"><div class="empty">No stores match your search</div></td></tr>`}</tbody>
+      </table>
+    </div>`;
+  });
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Clients</div><div class="stat-value">${clients.length}</div><div class="stat-sub">${clients.join(' · ')}</div></div>
+    <div class="stat"><div class="stat-label">Total stores</div><div class="stat-value">${total}</div><div class="stat-sub">Across all clients</div></div>
+    <div class="stat"><div class="stat-label">BSO stores</div><div class="stat-value" style="color:var(--badge-green-fg)">${(clientStores['BSO']||[]).length}</div><div class="stat-sub">Blooms The Chemist</div></div>
+    <div class="stat"><div class="stat-label">Showing</div><div class="stat-value">${filteredTotal}</div><div class="stat-sub">${q?'Matching search':'All stores'}</div></div>
+  </div>
+  ${sections}`;
+}
+
+function renderSettings(el){
+  el.innerHTML=`<div class="section"><div class="section-header"><h2>System settings</h2></div>
+  <div style="padding:1.5rem;display:grid;gap:1rem;max-width:480px">
+    <div class="field"><label>Warehouse name</label><input type="text" value="Sydney Main Warehouse"></div>
+    <div class="field"><label>Default currency</label><select><option>AUD</option><option>USD</option><option>EUR</option></select></div>
+    <div class="field"><label>Low stock threshold</label><input type="number" value="5"></div>
+    <div class="field"><label>Timezone</label><select><option>Australia/Sydney</option><option>Australia/Melbourne</option><option>UTC</option></select></div>
+    <button class="btn btn-primary" style="width:fit-content" onclick="alert('Settings saved')"><i class="ti ti-check" aria-hidden="true"></i>Save settings</button>
+  </div></div>`;
+}
+
+function handleSearch(){
+  searchTerm = document.getElementById('global-search').value;
+  render();
+}
+
+let editingId = null;
+function openAddModal(){
+  editingId = null;
+  const titles={items:'Add item',serials:'Register serial number',couriers:'New shipment',movements:'Log movement'};
+  document.getElementById('modal-title').textContent = titles[currentPage]||'Add';
+  document.getElementById('modal-body').innerHTML = getModalForm();
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function getModalForm(){
+  if(currentPage==='items') return `
+    <div class="field-row"><div class="field"><label>Item name</label><input id="f-name" type="text" placeholder="e.g. Laptop 15 Pro"></div>
+    <div class="field"><label>SKU</label><input id="f-sku" type="text" placeholder="e.g. LP-15-PRO"></div></div>
+    <div class="field-row"><div class="field"><label>Category</label><select id="f-cat" onchange="onCatChange()">${categoryOptions()}</select>
+    <div id="newcat-row" class="newcat-row"><input id="f-newcat" type="text" placeholder="New category name" maxlength="32" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewCategory()}"><button type="button" class="btn btn-primary newcat-add" onclick="addNewCategory()"><i class="ti ti-plus" aria-hidden="true"></i>Add</button></div></div>
+    <div class="field"><label>Location</label><input id="f-loc" type="text" placeholder="e.g. A1-03"></div></div>
+    <div class="field-row"><div class="field"><label>Qty</label><input id="f-qty" type="number" value="0" min="0"></div>
+    <div class="field"><label>Status</label><select id="f-status">${itemStatuses.map(s=>`<option>${s}</option>`).join('')}</select></div></div>`;
+  if(currentPage==='serials') return `
+    <div class="field"><label>Item</label><select id="f-item">${state.items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')}</select></div>
+    <div class="field"><label>Serial number(s)</label>
+      <textarea id="f-sn" placeholder="Enter one serial number per line — e.g.&#10;SN-2024-90001&#10;SN-2024-90002"></textarea>
+      <div class="hint">Add several lines to register multiple units of the same item in one go.</div>
+      <div class="gen-row">
+        <input id="f-gencount" type="number" min="1" max="500" value="5" aria-label="Quantity to auto-fill">
+        <input id="f-genprefix" type="text" placeholder="Prefix e.g. SN-2024-" aria-label="Serial prefix">
+        <button type="button" class="btn btn-outline" onclick="generateSerials()"><i class="ti ti-wand" aria-hidden="true"></i>Auto-fill</button>
+      </div>
+    </div>
+    <div class="field-row"><div class="field"><label>Assigned to</label><input id="f-assigned" type="text" placeholder="Order # or Stock"></div>
+    <div class="field"><label>Location</label><input id="f-loc" type="text" placeholder="e.g. A1-03"></div></div>
+    <div class="field"><label>Status</label><select id="f-status"><option>In stock</option><option>Shipped</option><option>Delivered</option><option>Processing</option></select></div>`;
+  if(currentPage==='couriers') return `
+    <div class="field"><label>Tracking ID</label><input id="f-id" type="text" placeholder="e.g. TRK-90020"></div>
+    <div class="field-row"><div class="field"><label>Courier</label><select id="f-courier">${courierNames.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Service type</label><input id="f-service" type="text" placeholder="e.g. Express"></div></div>
+    <div class="field-row"><div class="field"><label>Origin</label><input id="f-origin" type="text" value="Sydney Warehouse"></div>
+    <div class="field"><label>Destination</label><input id="f-dest" type="text" placeholder="City, State"></div></div>
+    <div class="field-row"><div class="field"><label>ETA</label><input id="f-eta" type="text" placeholder="27 Jun 2026"></div>
+    <div class="field"><label>Status</label><select id="f-status">${courierStatuses.map(s=>`<option>${s}</option>`).join('')}</select></div></div>
+    <div class="field-row"><div class="field"><label>Sales order #</label><input id="f-so" type="text" placeholder="e.g. SO-44050"></div>
+    <div class="field"><label>Ticket #</label><input id="f-ticket" type="text" placeholder="e.g. TKT-1200"></div></div>`;
+  if(currentPage==='movements') return `
+    <div class="field-row"><div class="field"><label>Type</label><select id="f-type">${movTypes.map(t=>`<option>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Serial number</label><select id="f-sn">${state.serials.map(s=>`<option value="${s.sn}">${s.sn}</option>`).join('')}</select></div></div>
+    <div class="field-row"><div class="field"><label>From</label><input id="f-from" type="text" placeholder="e.g. A1-03"></div>
+    <div class="field"><label>To</label><input id="f-to" type="text" placeholder="e.g. Dispatch"></div></div>
+    <div class="field"><label>Moved by (store)</label><select id="f-by" onchange="onStoreChange()">${storeOptions()}</select>
+    <div id="newstore-row" class="newcat-row"><select id="f-newstore-client" style="flex:none;width:90px">${Object.keys(clientStores).map(c=>`<option>${c}</option>`).join('')}</select><input id="f-newstore" type="text" placeholder="New store name" maxlength="60" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewStore()}"><button type="button" class="btn btn-primary newcat-add" onclick="addNewStore()"><i class="ti ti-plus" aria-hidden="true"></i>Add</button></div></div>`;
+  return '';
+}
+
+// ---------- On-the-fly item categories ----------
+// ---------- On-the-fly stores ----------
+function onStoreChange(){
+  const sel=document.getElementById('f-by');
+  const row=document.getElementById('newstore-row');
+  if(!sel||!row) return;
+  if(sel.value==='__newstore__'){ row.classList.add('open'); const i=document.getElementById('f-newstore'); if(i) i.focus(); }
+  else row.classList.remove('open');
+}
+function addNewStore(){
+  const client=document.getElementById('f-newstore-client').value;
+  const inp=document.getElementById('f-newstore');
+  const name=(inp.value||'').replace(/[<>]/g,'').trim();
+  if(!name){ inp.focus(); return; }
+  if(!clientStores[client]) clientStores[client]=[];
+  if(!clientStores[client].some(s=>s.n===name)){ clientStores[client].push({n:name}); clientStores[client].sort((a,b)=>a.n.localeCompare(b.n)); saveCustomStores(); }
+  const sel=document.getElementById('f-by');
+  sel.innerHTML=storeOptions(name);
+  document.getElementById('newstore-row').classList.remove('open');
+  inp.value='';
+  showToast('Store added to '+client);
+}
+// Used when saving with an un-added typed store; defaults the client to BSO.
+function addStoreReturn(name){
+  name=name.replace(/[<>]/g,'').trim();
+  if(!name) return '';
+  const client=(document.getElementById('f-newstore-client')||{}).value||'BSO';
+  if(!clientStores[client]) clientStores[client]=[];
+  if(!clientStores[client].some(s=>s.n===name)){ clientStores[client].push({n:name}); clientStores[client].sort((a,b)=>a.n.localeCompare(b.n)); saveCustomStores(); }
+  return name;
+}
+
+function onCatChange(){
+  const sel=document.getElementById('f-cat');
+  const row=document.getElementById('newcat-row');
+  if(!sel||!row) return;
+  if(sel.value==='__new__'){ row.classList.add('open'); const i=document.getElementById('f-newcat'); if(i) i.focus(); }
+  else row.classList.remove('open');
+}
+function addCategory(name){
+  name=(name||'').replace(/[<>]/g,'').trim();
+  if(!name) return null;
+  if(!categories.includes(name)){
+    const oi=categories.indexOf('Other');            // keep "Other" last
+    if(oi>-1) categories.splice(oi,0,name); else categories.push(name);
+    saveCategories();
+  }
+  return name;
+}
+function addNewCategory(){
+  const inp=document.getElementById('f-newcat');
+  const name=addCategory(inp.value);
+  if(!name){ inp.focus(); return; }
+  const sel=document.getElementById('f-cat');
+  sel.innerHTML=categoryOptions(name);
+  document.getElementById('newcat-row').classList.remove('open');
+  inp.value='';
+  showToast('Category “'+name+'” added');
+}
+
+// ---------- Bulk serial registration helpers ----------
+function parseSerialLines(raw){
+  return (raw||'').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+}
+function generateSerials(){
+  const count=Math.max(1,Math.min(500,parseInt(document.getElementById('f-gencount').value)||1));
+  const prefix=(document.getElementById('f-genprefix').value||'SN-2024-').trim();
+  const ta=document.getElementById('f-sn');
+  // Continue numbering past anything already registered or typed, to avoid clashes
+  const pool=state.serials.map(s=>s.sn).concat(parseSerialLines(ta.value));
+  const nums=pool.map(s=>{const m=s.match(/(\d+)\s*$/);return m?parseInt(m[1]):0;});
+  const start=(nums.length?Math.max(...nums):0)+1;
+  const out=[];
+  for(let i=0;i<count;i++) out.push(prefix+String(start+i).padStart(5,'0'));
+  ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+out.join('\n');
+}
+
+function saveModal(){
+  const now = new Date();
+  const dateStr = `${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(currentPage==='items'){
+    const name=document.getElementById('f-name').value||'New Item';
+    const n=state.items.length+1;
+    let cat=document.getElementById('f-cat').value;
+    if(cat==='__new__') cat = addCategory(document.getElementById('f-newcat').value) || 'Other';
+    state.items.push({id:`ITM-${String(n).padStart(3,'0')}`,name,sku:document.getElementById('f-sku').value||'SKU-NEW',category:cat,location:document.getElementById('f-loc').value||'-',qty:parseInt(document.getElementById('f-qty').value)||0,status:document.getElementById('f-status').value});
+  } else if(currentPage==='serials'){
+    const itemId=document.getElementById('f-item').value;
+    const item=state.items.find(i=>i.id===itemId);
+    let sns=parseSerialLines(document.getElementById('f-sn').value);
+    if(!sns.length) sns=[`SN-2024-${Math.floor(Math.random()*90000+10000)}`];
+    const assigned=document.getElementById('f-assigned').value||'Stock';
+    const status=document.getElementById('f-status').value;
+    const loc=document.getElementById('f-loc').value||'-';
+    const seen=new Set(state.serials.map(s=>s.sn));
+    let added=0,skipped=0;
+    sns.forEach(sn=>{
+      if(seen.has(sn)){skipped++;return;}
+      seen.add(sn);
+      state.serials.push({sn,item:item?item.name:'Unknown',itemId,assigned,status,location:loc});
+      added++;
+    });
+    showToast(`Registered ${added} serial${added!==1?'s':''}`+(skipped?` · ${skipped} duplicate${skipped!==1?'s':''} skipped`:''));
+  } else if(currentPage==='couriers'){
+    state.couriers.push({id:document.getElementById('f-id').value||`TRK-${Math.floor(Math.random()*9000+90000)}`,courier:document.getElementById('f-courier').value,service:document.getElementById('f-service').value||'Standard',origin:document.getElementById('f-origin').value,dest:document.getElementById('f-dest').value||'Unknown',status:document.getElementById('f-status').value,eta:document.getElementById('f-eta').value||'TBD',items:[],updated:dateStr,salesOrder:document.getElementById('f-so').value||'',ticket:document.getElementById('f-ticket').value||''});
+  } else if(currentPage==='movements'){
+    const snVal=document.getElementById('f-sn').value;
+    const ser=state.serials.find(s=>s.sn===snVal);
+    const n=state.movements.length+1;
+    let byVal=document.getElementById('f-by').value;
+    if(byVal==='__newstore__'){ const t=(document.getElementById('f-newstore').value||'').trim(); byVal = t? addStoreReturn(t) : ''; }
+    state.movements.unshift({id:`MOV-${440+n}`,type:document.getElementById('f-type').value,item:ser?ser.item:'Unknown',sn:snVal,from:document.getElementById('f-from').value||'-',to:document.getElementById('f-to').value||'-',by:byVal||'Unassigned',date:`26 Jun ${dateStr.split(' ').pop()}`});
+  }
+  closeModalDirect();
+  render();
+}
+
+function closeModal(e){if(e.target===document.getElementById('modal-bg'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal-bg').classList.remove('open');}
+
+function showItemDetail(id){
+  const i=state.items.find(x=>x.id===id);
+  const serials=state.serials.filter(s=>s.itemId===id);
+  document.getElementById('detail-title').textContent=i.name;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Item ID</span><span class="dd mono">${i.id}</span>
+    <span class="dt">SKU</span><span class="dd mono">${i.sku}</span>
+    <span class="dt">Category</span><span class="dd">${i.category}</span>
+    <span class="dt">Location</span><span class="dd mono">${i.location}</span>
+    <span class="dt">Quantity</span><span class="dd">${i.qty}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(i.status)}</span></div>
+    <div class="detail-subhead">Serialised units (${serials.length})</div>
+    ${serials.length?serials.map(s=>`<div style="border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:8px;font-size:12px">
+      <span class="mono">${s.sn}</span> &nbsp;${statusBadge(s.status)}<div style="color:var(--color-text-secondary);margin-top:4px">${s.assigned} · ${s.location}</div></div>`).join(''):'<div style="font-size:13px;color:var(--color-text-tertiary)">No serial numbers registered</div>'}`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function showSerialDetail(sn){
+  const s=state.serials.find(x=>x.sn===sn);
+  const movs=state.movements.filter(m=>m.sn===sn);
+  document.getElementById('detail-title').textContent='Serial detail';
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Serial</span><span class="dd mono">${s.sn}</span>
+    <span class="dt">Item</span><span class="dd">${s.item}</span>
+    <span class="dt">Assigned</span><span class="dd">${s.assigned}</span>
+    <span class="dt">Location</span><span class="dd mono">${s.location}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(s.status)}</span></div>
+    <div class="detail-subhead">Movement history</div>
+    <div class="timeline">${movs.length?movs.map((m,idx)=>`<div class="timeline-item">
+      <div class="timeline-dot ${idx===0?'active':'done'}"><i class="ti ti-${m.type==='Inbound'?'arrow-down':m.type==='Outbound'?'arrow-up':'arrows-transfer-up'}" aria-hidden="true"></i></div>
+      <div class="timeline-content"><div class="timeline-title">${m.type}: ${m.from} → ${m.to}</div><div class="timeline-meta">${m.by} · ${m.date}</div></div>
+    </div>`).join(''):'<div style="font-size:13px;color:var(--color-text-tertiary)">No movements recorded</div>'}</div>`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function showCourierDetail(id){
+  const c=state.couriers.find(x=>x.id===id);
+  const steps=[
+    {label:'Order created',done:true,icon:'ti-circle-check'},
+    {label:'Processing',done:['Processing','In transit','Out for delivery','Delivered'].includes(c.status),icon:'ti-package'},
+    {label:'In transit',done:['In transit','Out for delivery','Delivered'].includes(c.status),icon:'ti-truck-delivery'},
+    {label:'Out for delivery',done:['Out for delivery','Delivered'].includes(c.status),icon:'ti-map-pin'},
+    {label:'Delivered',done:c.status==='Delivered',icon:'ti-circle-check'},
+  ];
+  const active=steps.findLastIndex(s=>s.done);
+  const url=trackingLink(c);
+  document.getElementById('detail-title').textContent=c.id;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="dl"><span class="dt">Courier</span><span class="dd">${c.courier}</span>
+    <span class="dt">Service</span><span class="dd">${c.service}</span>
+    <span class="dt">Origin</span><span class="dd">${c.origin}</span>
+    <span class="dt">Destination</span><span class="dd">${c.dest}</span>
+    <span class="dt">ETA</span><span class="dd">${c.eta}</span>
+    <span class="dt">Sales order</span><span class="dd mono">${c.salesOrder||'—'}</span>
+    <span class="dt">Ticket</span><span class="dd mono">${c.ticket||'—'}</span>
+    <span class="dt">Status</span><span class="dd">${statusBadge(c.status)}</span>
+    <span class="dt">Updated</span><span class="dd">${c.updated}</span></div>
+    <div class="detail-subhead">Tracking link</div>
+    <div class="track-link">
+      <a href="${url}" target="_blank" rel="noopener" class="mono track-url" title="${url}">${url}</a>
+      <div class="track-actions">
+        <a href="${url}" target="_blank" rel="noopener" class="btn btn-outline" style="padding:6px 11px"><i class="ti ti-external-link" aria-hidden="true"></i>Open</a>
+        <button class="btn btn-outline" style="padding:6px 11px" onclick="copyTracking('${c.id}',this)"><i class="ti ti-copy" aria-hidden="true"></i>Copy</button>
+      </div>
+    </div>
+    <div class="detail-subhead">Shipment progress</div>
+    <div class="timeline">${steps.map((s,i)=>`<div class="timeline-item">
+      <div class="timeline-dot ${s.done?(i===active?'active':'done'):''}"><i class="ti ${s.icon}" aria-hidden="true"></i></div>
+      <div class="timeline-content"><div class="timeline-title" style="color:${s.done?'var(--color-text-primary)':'var(--color-text-tertiary)'}">${s.label}</div></div>
+    </div>`).join('')}</div>
+    ${c.items.length?`<div class="detail-subhead">Items in shipment</div>${c.items.map(sn=>`<div class="mono" style="font-size:12px;padding:5px 0">${sn}</div>`).join('')}`:'<div style="font-size:13px;color:var(--color-text-tertiary)">No items linked</div>'}`;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail(){document.getElementById('detail-panel').classList.remove('open');}
+
+// ---------- Tracking link copy ----------
+function copyTracking(id,btn){
+  const c=state.couriers.find(x=>x.id===id);
+  if(!c) return;
+  const url=trackingLink(c);
+  const done=()=>{
+    const original=btn.innerHTML;
+    btn.innerHTML='<i class="ti ti-check" aria-hidden="true"></i>Copied';
+    showToast('Tracking link copied');
+    setTimeout(()=>{btn.innerHTML=original;},1600);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done));
+  } else { fallbackCopy(url,done); }
+}
+function fallbackCopy(text,cb){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');cb();}catch(e){showToast('Copy failed — select the link manually');}
+  document.body.removeChild(ta);
+}
+let toastTimer=null;
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ---------- Theme toggle ----------
+function setTheme(theme){
+  const root = document.documentElement;
+  if(theme==='dark') root.setAttribute('data-theme','dark');
+  else root.removeAttribute('data-theme');
+  try{ localStorage.setItem('whos-theme', theme); }catch(e){}
+  syncThemeToggle();
+}
+function syncThemeToggle(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const lightBtn = document.getElementById('theme-light');
+  const darkBtn = document.getElementById('theme-dark');
+  if(!lightBtn||!darkBtn) return;
+  lightBtn.classList.toggle('on', !isDark);
+  darkBtn.classList.toggle('on', isDark);
+  lightBtn.setAttribute('aria-pressed', String(!isDark));
+  darkBtn.setAttribute('aria-pressed', String(isDark));
+}
+syncThemeToggle();
+
+// Close panels on Escape
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalDirect();closeDetail();}});
+
+render();
+</script>
+</body>
+</html>
