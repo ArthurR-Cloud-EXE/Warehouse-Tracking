@@ -47,9 +47,10 @@ instructions shown. HTTPS is provisioned automatically.
 
 ## Notes
 
-- The page fetches the Inter / JetBrains Mono web fonts and the Tabler icon set
-  from public CDNs on first load. They are cached by the browser; if a CDN is
-  unreachable the app still works with fallback fonts/icons.
+- The fonts (Inter, JetBrains Mono, Outfit) and Tabler icons are bundled inline
+  in `index.html`, so the page renders correctly with **no external requests**
+  and works fully offline. (Tabler is subset to only the icons the app uses to
+  keep the file size down.)
 - `_headers` in the repo root sets baseline security headers and tells the CDN
   to revalidate the HTML so new deploys show up without a hard refresh.
 - The repo also contains versioned snapshots

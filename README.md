@@ -26,7 +26,7 @@ The application ships as a single, self-contained HTML file. No build step, serv
 
 Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari). Data is stored locally in the browser (`localStorage`), and the UI supports light/dark themes.
 
-> An internet connection is used on first load to fetch the Inter / JetBrains Mono web fonts and the Tabler icon set from their CDNs. The app remains usable without them — only the typography and icons fall back.
+> The fonts (Inter, JetBrains Mono, Outfit) and the Tabler icons are bundled inline, so the app renders correctly with no external requests and works fully offline.
 
 ### What's in this release
 
