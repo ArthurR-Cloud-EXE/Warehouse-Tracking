@@ -231,6 +231,11 @@ html[data-theme="dark"] .nav-badge.nav-badge-cal{background:#8b5cf6}
 .subnav-item.subnav-overdue .cnt{opacity:.9;color:var(--badge-red-fg)}
 .subnav-item.subnav-overdue:hover{background:var(--badge-red-bg);color:var(--badge-red-fg)}
 .subnav-item.subnav-overdue.active{background:var(--badge-red-bg);color:var(--badge-red-fg);box-shadow:var(--shadow-sm)}
+.subnav-item.cat-item span:first-child{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.subnav-item.cat-item span:first-child > span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--color-text-tertiary)}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap}
+.cat-note{margin-top:4px;font-size:12px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px}
 .nav-item:hover i{color:var(--color-text-secondary)}
 .sidebar-foot{margin-top:auto;padding:0 .6rem}
 .sidebar-card{
@@ -559,20 +564,22 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
     </div>
     <div class="nav-group">
       <div class="nav-label">Operations</div>
-      <div class="nav-item nav-calendar" tabindex="0" role="button" onclick="switchPage('calendar')" onkeydown="if(event.key==='Enter')switchPage('calendar')"><i class="ti ti-calendar-event" aria-hidden="true"></i><span>Calendar</span><span class="nav-badge nav-badge-cal" id="calendar-badge" title="Tasks to complete"></span></div>
-      <div class="nav-item active" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
-      <div class="nav-item expanded" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
+      <div class="nav-item nav-calendar" data-page="calendar" tabindex="0" role="button" onclick="switchPage('calendar')" onkeydown="if(event.key==='Enter')switchPage('calendar')"><i class="ti ti-calendar-event" aria-hidden="true"></i><span>Calendar</span><span class="nav-badge nav-badge-cal" id="calendar-badge" title="Tasks to complete"></span></div>
+      <div class="nav-item active" data-page="items" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
+      <div class="nav-item expanded" data-page="serials" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
       <div class="subnav open" id="subnav-serials"></div>
-      <div class="nav-item expanded" id="nav-couriers" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
+      <div class="nav-item expanded" data-page="couriers" id="nav-couriers" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
       <div class="subnav open" id="subnav-couriers"></div>
-      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
-      <div class="nav-item" id="nav-ewaste" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
-      <div class="nav-item" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
+      <div class="nav-item" data-page="movements" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
+      <div class="nav-item" data-page="ewaste" id="nav-ewaste" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
+      <div class="nav-item" data-page="stores" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
+      <div class="nav-item expanded" id="nav-categories" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped as categories"><i class="ti ti-tags" aria-hidden="true"></i><span>Categories</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
+      <div class="subnav open" id="subnav-categories"></div>
     </div>
     <div class="sidebar-foot">
       <div class="nav-group">
         <div class="nav-label">System</div>
-        <div class="nav-item" tabindex="0" role="button" onclick="switchPage('settings')" onkeydown="if(event.key==='Enter')switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+        <div class="nav-item" data-page="settings" tabindex="0" role="button" onclick="switchPage('settings')" onkeydown="if(event.key==='Enter')switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
         <div class="nav-item" tabindex="0" role="button" onclick="whosLogout()" onkeydown="if(event.key==='Enter')whosLogout()"><i class="ti ti-logout-2" aria-hidden="true"></i><span>Log out</span></div>
       </div>
       <div class="sidebar-card"><span class="dot"></span><b>Sydney Main</b><br>All systems operational</div>
@@ -5505,6 +5512,63 @@ window._tasksMap = getTasksMap;
 let currentPage = 'items';
 let searchTerm = '';
 
+/* ============================================================
+   CALENDAR CATEGORIES
+   The calendar tags (ALL_TAGS in the embedded calendar doc) are
+   surfaced in the sidebar under Operations → Categories. Each
+   category lists the calendar tasks carrying that tag, pulled
+   live from the shared `tasksMap` storage. Tags that already map
+   to a dedicated page (E-Waste) route there instead, so the
+   existing page is what "pulls" the calendar information.
+   Keep CAL_TAGS / CAL_TAG_COLORS in sync with the calendar doc.
+   ============================================================ */
+const CAL_TAGS = ['Sales Order','Purchase Order','General Task','Store Refresh','New Store','Replacement','URGENT Task','Implemented','Issue Raised','E-Waste','E-Waste Processing','Training'];
+const CAL_TAG_COLORS = {
+  'Sales Order':       {bg:'#e0f2fe',fg:'#0369a1',darkBg:'rgba(14,165,233,.15)',darkFg:'#7dd3fc'},
+  'Purchase Order':    {bg:'#e0e7ff',fg:'#4338ca',darkBg:'rgba(99,102,241,.15)',darkFg:'#a5b4fc'},
+  'General Task':      {bg:'#f1f5f9',fg:'#475569',darkBg:'rgba(148,163,184,.15)',darkFg:'#cbd5e1'},
+  'Store Refresh':     {bg:'#dcfce7',fg:'#15803d',darkBg:'rgba(34,197,94,.15)',darkFg:'#86efac'},
+  'New Store':         {bg:'#f3e8ff',fg:'#6b21a8',darkBg:'rgba(168,85,247,.15)',darkFg:'#d8b4fe'},
+  'Replacement':       {bg:'#ccfbf1',fg:'#0f766e',darkBg:'rgba(20,184,166,.15)',darkFg:'#99f6e4'},
+  'URGENT Task':       {bg:'#fee2e2',fg:'#b91c1c',darkBg:'rgba(239,68,68,.2)',darkFg:'#fca5a5'},
+  'Implemented':       {bg:'#ecfdf5',fg:'#047857',darkBg:'rgba(16,185,129,.15)',darkFg:'#6ee7b7'},
+  'Issue Raised':      {bg:'#fef3c7',fg:'#b45309',darkBg:'rgba(245,158,11,.15)',darkFg:'#fde047'},
+  'E-Waste':           {bg:'#fafaf9',fg:'#57534e',darkBg:'rgba(120,113,108,.15)',darkFg:'#d6d3d1'},
+  'E-Waste Processing':{bg:'#ffedd5',fg:'#ea580c',darkBg:'rgba(234,88,12,.15)',darkFg:'#fdba74'},
+  'Training':          {bg:'#fae8ff',fg:'#a21caf',darkBg:'rgba(217,70,239,.15)',darkFg:'#f5d0fe'}
+};
+const CAL_TAG_ICONS = {
+  'Sales Order':'ti-receipt','Purchase Order':'ti-shopping-cart','General Task':'ti-checkbox',
+  'Store Refresh':'ti-refresh','New Store':'ti-building-store','Replacement':'ti-replace',
+  'URGENT Task':'ti-alert-triangle','Implemented':'ti-circle-check','Issue Raised':'ti-flag',
+  'E-Waste':'ti-recycle','E-Waste Processing':'ti-recycle','Training':'ti-school'
+};
+// Tags whose information already lives on an existing page; the category
+// routes there rather than to a generic tag listing.
+const TAG_PAGE_OVERLAP = { 'E-Waste':'ewaste' };
+
+function isDarkTheme(){ return document.documentElement.getAttribute('data-theme')==='dark'; }
+function getCalendarTaskMap(){ try{ return JSON.parse(localStorage.getItem('tasksMap')||'{}'); }catch(e){ return {}; } }
+function calendarTasksByTag(tag){
+  const m=getCalendarTaskMap(); const out=[];
+  Object.keys(m).forEach(date=>{
+    (m[date]||[]).forEach((t,idx)=>{
+      if(t && Array.isArray(t.tags) && t.tags.includes(tag)) out.push(Object.assign({_date:date,_idx:idx}, t));
+    });
+  });
+  out.sort((a,b)=> a._date<b._date?1:(a._date>b._date?-1:0)); // newest first
+  return out;
+}
+function calendarTagCount(tag){ return calendarTasksByTag(tag).length; }
+function tagDotColor(tag){ const c=CAL_TAG_COLORS[tag]||{}; return isDarkTheme()?(c.darkFg||'#888'):(c.fg||'#888'); }
+function tagPillHtml(tag){
+  const c=CAL_TAG_COLORS[tag]||{}; const dark=isDarkTheme();
+  const bg=dark?(c.darkBg||'rgba(148,163,184,.15)'):(c.bg||'#eef0f4');
+  const fg=dark?(c.darkFg||'#cbd5e1'):(c.fg||'#525c6b');
+  return `<span class="cat-pill" style="background:${bg};color:${fg}">${esc(tag)}</span>`;
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 const state = {
   items: [
     {id:'ITM-001',name:'Laptop 15" Pro',sku:'LP-15-PRO',category:'Electronics',company:'BSO',location:'A1-03',qty:12,status:'In stock'},
@@ -5822,12 +5886,41 @@ function navOverdue(){
   overdueOnly=true;
   switchPage('couriers');
 }
+function buildCategorySubnav(){
+  const host=document.getElementById('subnav-categories');
+  if(!host) return;
+  host.innerHTML = CAL_TAGS.map(tag=>{
+    const cnt=calendarTagCount(tag);
+    const overlap=TAG_PAGE_OVERLAP[tag];
+    const safe=tag.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const hint=overlap?` title="Opens the ${overlap==='ewaste'?'E-Waste':overlap} page (pulls these calendar entries)"`:'';
+    return `<div class="subnav-item cat-item" data-tag="${esc(tag)}" onclick="navTag('${safe}')"${hint}>`
+      + `<span><span class="cat-dot" style="background:${tagDotColor(tag)}"></span><span>${esc(tag)}</span></span>`
+      + `<span class="cnt">${cnt}</span></div>`;
+  }).join('');
+  updateCategoryActive();
+}
+function navTag(tag){
+  const overlap=TAG_PAGE_OVERLAP[tag];
+  if(overlap) switchPage(overlap); else switchPage('tag:'+tag);
+}
+function updateCategoryActive(){
+  document.querySelectorAll('#subnav-categories .subnav-item').forEach(el=>{
+    const tag=el.dataset.tag, overlap=TAG_PAGE_OVERLAP[tag];
+    const active = overlap ? (currentPage===overlap) : (currentPage==='tag:'+tag);
+    el.classList.toggle('active', active);
+  });
+}
 function setExpanded(page){
   // Submenus are persistent: navigating to a page opens its menu but never
   // closes the other. Use the chevron (toggleSub) to collapse a menu manually.
   if(page==='serials'||page==='couriers'){
     document.getElementById('nav-'+page)?.classList.add('expanded');
     document.getElementById('subnav-'+page)?.classList.add('open');
+  }
+  if(typeof page==='string' && (page.indexOf('tag:')===0 || TAG_PAGE_OVERLAP[page] || Object.values(TAG_PAGE_OVERLAP).indexOf(page)!==-1)){
+    document.getElementById('nav-categories')?.classList.add('expanded');
+    document.getElementById('subnav-categories')?.classList.add('open');
   }
 }
 function toggleSub(page,ev){
@@ -5837,6 +5930,7 @@ function toggleSub(page,ev){
 }
 function updateSubnavActive(){
   document.querySelectorAll('.subnav-item').forEach(el=>{
+    if(el.dataset.tag!==undefined) return;   // category items manage their own active state
     const page=el.dataset.page, key=el.dataset.key;
     let active=false;
     if(key==='__overdue__') active = currentPage==='couriers' && overdueOnly;
@@ -5848,11 +5942,19 @@ function updateSubnavActive(){
 
 function switchPage(page){
   currentPage = page;
+  const isTag = typeof page==='string' && page.indexOf('tag:')===0;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.nav-item')[['calendar','items','serials','couriers','movements','ewaste','stores','settings'].indexOf(page)].classList.add('active');
-  document.getElementById('page-title').textContent = {items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',ewaste:'E-Waste',stores:'Stores',calendar:'Calendar',settings:'Settings'}[page];
-  document.getElementById('add-label').textContent = {items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',ewaste:'Book e-waste',stores:'',calendar:'',settings:''}[page];
-  document.getElementById('add-btn').style.display = (page==='settings'||page==='stores'||page==='calendar')?'none':'flex';
+  if(isTag){
+    document.getElementById('nav-categories')?.classList.add('active');
+  } else {
+    const navEl=document.querySelector('.nav-item[data-page="'+page+'"]');
+    if(navEl) navEl.classList.add('active');
+  }
+  const titles={items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',ewaste:'E-Waste',stores:'Stores',calendar:'Calendar',settings:'Settings'};
+  const addLabels={items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',ewaste:'Book e-waste',stores:'',calendar:'',settings:''};
+  document.getElementById('page-title').textContent = isTag ? page.slice(4) : (titles[page]||'');
+  document.getElementById('add-label').textContent = isTag ? '' : (addLabels[page]||'');
+  document.getElementById('add-btn').style.display = (isTag||page==='settings'||page==='stores'||page==='calendar')?'none':'flex';
   const searchEl=document.querySelector('.search'); if(searchEl) searchEl.style.display = page==='calendar'?'none':'flex';
   setExpanded(page);
   closeDetail();
@@ -5865,7 +5967,8 @@ function render(){
   const el = document.getElementById('page-content');
   syncCalendarFromStorage();
   el.classList.toggle('calendar-full', currentPage==='calendar');
-  if(currentPage==='items') renderItems(el,q);
+  if(currentPage.indexOf('tag:')===0) renderTagCategory(el, currentPage.slice(4), q);
+  else if(currentPage==='items') renderItems(el,q);
   else if(currentPage==='serials') renderSerials(el,q);
   else if(currentPage==='couriers') renderCouriers(el,q);
   else if(currentPage==='movements') renderMovements(el,q);
@@ -5874,8 +5977,51 @@ function render(){
   else if(currentPage==='ewaste') renderEWaste(el,q);
   else renderSettings(el);
   buildCompanySubnav();
+  buildCategorySubnav();
   updateEWasteBadge();
   updateCalendarBadge();
+}
+
+// ---------- Calendar tag category page ----------
+function renderTagCategory(el, tag, q){
+  if(CAL_TAGS.indexOf(tag)===-1){ el.innerHTML='<div class="section"><div class="empty">Unknown category</div></div>'; return; }
+  let data=calendarTasksByTag(tag);
+  const total=data.length;
+  if(q) data=data.filter(t=> (`${t.text||''} ${t.client||''} ${t.trackingNo||''} ${t.ref1||''} ${t.ref2||''} ${(t.issuePeople||[]).join(' ')} ${t.note||''} ${t._date}`).toLowerCase().includes(q));
+  const done=data.filter(t=>t.completed).length;
+  const pending=data.length-done;
+  const icon=CAL_TAG_ICONS[tag]||'ti-tag';
+  const rows = data.length ? data.map(t=>{
+    const trk = t.trackingNo ? `<span class="mono">${esc(t.trackingNo)}</span>${t.courier?`<div style="font-size:11px;color:var(--color-text-tertiary)">${esc(t.courier)}</div>`:''}` : '—';
+    const refs = [t.ref1,t.ref2].filter(Boolean).map(esc).join(' / ') || '—';
+    const ppl = (t.issuePeople||[]).filter(Boolean).map(esc).join(', ') || '—';
+    const others = (t.tags||[]).filter(x=>x!==tag).map(tagPillHtml).join(' ');
+    const note = t.note ? `<div class="cat-note" title="${esc(t.note)}">${esc(t.note)}</div>` : '';
+    const time = (t.startTime||t.endTime) ? `<div style="font-size:11px;color:var(--color-text-tertiary)">${esc(t.startTime||'')}${t.endTime?'–'+esc(t.endTime):''}</div>` : '';
+    return `<tr>
+      <td style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">${esc(fmtDate(t._date))}${time}</td>
+      <td><div style="font-weight:600">${esc(t.text)||'—'}</div>${others?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px">${others}</div>`:''}${note}</td>
+      <td style="font-size:12px">${esc(t.client)||'—'}</td>
+      <td>${trk}</td>
+      <td style="font-size:12px">${refs}</td>
+      <td style="font-size:12px">${ppl}</td>
+      <td>${t.completed?'<span class="badge badge-green">Done</span>':'<span class="badge badge-amber">Pending</span>'}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7"><div class="empty">No calendar tasks tagged “${esc(tag)}”${q?' match your search':' yet'}. Add the tag to a task in the Calendar and it will appear here.</div></td></tr>`;
+  el.innerHTML=`
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">${tagPillHtml(tag)}</div><div class="stat-value">${total}</div><div class="stat-sub">On the calendar</div></div>
+    <div class="stat"><div class="stat-label">Completed</div><div class="stat-value" style="color:var(--badge-green-fg)">${calendarTasksByTag(tag).filter(t=>t.completed).length}</div><div class="stat-sub">Marked done</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-value" style="color:var(--badge-amber-fg)">${calendarTasksByTag(tag).filter(t=>!t.completed).length}</div><div class="stat-sub">Outstanding</div></div>
+    <div class="stat"><div class="stat-label">Showing</div><div class="stat-value">${data.length}</div><div class="stat-sub">${q?'Matching search':'All entries'}</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2><i class="ti ${icon}" aria-hidden="true" style="margin-right:7px"></i>${esc(tag)}</h2><span class="section-count">${data.length} entr${data.length!==1?'ies':'y'}</span></div>
+    <table class="table">
+      <thead><tr><th style="width:104px">Date</th><th>Task</th><th style="width:150px">Client</th><th style="width:140px">Tracking</th><th style="width:120px">Refs</th><th style="width:130px">People</th><th style="width:92px">Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 // Embed the self-contained WorkFlow calendar (stored in an inert script block)
@@ -6567,6 +6713,8 @@ function setTheme(theme){
   try{ localStorage.setItem('whos-theme', theme); }catch(e){}
   syncThemeToggle();
   syncCalendarTheme();
+  buildCategorySubnav();                       // refresh category dot colors for the theme
+  if(currentPage.indexOf('tag:')===0) render(); // re-tint pills on an open category page
 }
 // Drive the embedded calendar's light/dark from the main WarehouseOS toggle,
 // and hide the calendar's own theme button so there's a single source of truth.
@@ -6636,7 +6784,8 @@ window.addEventListener('message', function(e){
     syncCalendarEWaste(e.data.tasks||{});
     updateCalendarBadge();
     updateEWasteBadge();
-    if(currentPage==='couriers'||currentPage==='ewaste') render(); else buildCompanySubnav();
+    if(currentPage==='couriers'||currentPage==='ewaste'||currentPage.indexOf('tag:')===0) render();
+    else { buildCompanySubnav(); buildCategorySubnav(); }
   }
 });
 function syncThemeToggle(){
