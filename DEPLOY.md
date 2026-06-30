@@ -68,11 +68,22 @@ client-side, so a determined visitor can bypass it (view source, disable
 JavaScript, read `localStorage`). Treat it as a "please don't shoulder-surf"
 deterrent only.
 
-- **Login:** username `t360group`; the password is set by the owner and is
-  intentionally not stored in this repo (only its hash lives in `index.html`).
-- **Change the credentials:** open the site, open the browser console, run
-  `whosHash('your-new-password')`, then paste the result into `AUTH_PASS_HASH`
-  near the bottom of `index.html` (and set `AUTH_USERNAME`). Commit and redeploy.
+- **Seed admin:** username `t360group`; the password is set by the owner and is
+  intentionally not stored in this repo (only its hash lives in `index.html`, in
+  `DEFAULT_ADMIN`). This account is created automatically the first time the app
+  runs on a device.
+- **Managing users:** sign in as an admin and open the **Admin** page (sidebar →
+  System → Admin). From there you can create users, assign **Admin** or **User**
+  roles, reset passwords, and delete accounts. The app keeps at least one admin
+  and won't let you delete your own account.
+- **Where accounts live:** in this browser's `localStorage` (`whos-users`), so
+  they **do not sync between devices or users** and reset if storage is cleared.
+  This is a convenience layer, not shared access control — for that, use
+  Cloudflare Access (below).
+- **Change the seed password:** run `whosHash('new-password')` in the browser
+  console and paste the result into `DEFAULT_ADMIN.passHash` near the bottom of
+  `index.html`, then commit and redeploy. (Only affects devices with no accounts
+  stored yet.)
 - Sessions are kept in `sessionStorage`, so closing the browser tab logs out.
   The sidebar **Log out** entry ends the session immediately.
 

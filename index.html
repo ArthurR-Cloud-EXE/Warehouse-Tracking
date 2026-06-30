@@ -259,6 +259,17 @@ html[data-theme="dark"] .nav-badge.nav-badge-cal{background:#8b5cf6}
 .cat-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--color-text-tertiary)}
 .cat-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.5;white-space:nowrap}
 .cat-note{margin-top:4px;font-size:12px;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:520px}
+.sidebar-user{padding:7px 12px 2px;font-size:11.5px;color:var(--color-text-tertiary);font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-user:empty{display:none}
+.sidebar-user::before{font-family:"tabler-icons";content:"\eb04";font-weight:400;opacity:.85;font-size:14px}
+.btn-sm{padding:5px 9px;font-size:12px}
+.btn-outline.danger{color:var(--badge-red-fg);border-color:var(--badge-red-fg)}
+.btn-outline.danger:hover:not([disabled]){background:var(--badge-red-bg)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none}
+.admin-msg{font-size:13px;font-weight:500}
+.admin-msg.ok{color:var(--badge-green-fg)}
+.admin-msg.err{color:var(--badge-red-fg)}
+.admin-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .nav-item:hover i{color:var(--color-text-secondary)}
 .sidebar-foot{margin-top:auto;padding:0 .6rem}
 .sidebar-card{
@@ -604,8 +615,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <div class="nav-group">
         <div class="nav-label">System</div>
         <div class="nav-item" data-page="settings" tabindex="0" role="button" onclick="switchPage('settings')" onkeydown="if(event.key==='Enter')switchPage('settings')"><i class="ti ti-settings" aria-hidden="true"></i><span>Settings</span></div>
+        <div class="nav-item" data-page="admin" id="nav-admin" style="display:none" tabindex="0" role="button" onclick="switchPage('admin')" onkeydown="if(event.key==='Enter')switchPage('admin')"><i class="ti ti-shield-lock" aria-hidden="true"></i><span>Admin</span></div>
         <div class="nav-item" tabindex="0" role="button" onclick="whosLogout()" onkeydown="if(event.key==='Enter')whosLogout()"><i class="ti ti-logout-2" aria-hidden="true"></i><span>Log out</span></div>
       </div>
+      <div class="sidebar-user" id="sidebar-user" title="Signed-in user"></div>
       <div class="sidebar-card"><span class="dot"></span><b>Sydney Main</b><br>All systems operational</div>
     </div>
   </div>
@@ -5951,12 +5964,12 @@ function switchPage(page){
     const navEl=document.querySelector('.nav-item[data-page="'+page+'"]');
     if(navEl) navEl.classList.add('active');
   }
-  const titles={items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',ewaste:'E-Waste',stores:'Stores',calendar:'Calendar',settings:'Settings'};
-  const addLabels={items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',ewaste:'Book e-waste',stores:'',calendar:'',settings:''};
+  const titles={items:'Items',serials:'Serial numbers',couriers:'Courier tracking',movements:'Movements',ewaste:'E-Waste',stores:'Stores',calendar:'Calendar',settings:'Settings',admin:'User management'};
+  const addLabels={items:'Add item',serials:'Register serial',couriers:'New shipment',movements:'Log movement',ewaste:'Book e-waste',stores:'',calendar:'',settings:'',admin:''};
   document.getElementById('page-title').textContent = isTag ? page.slice(4) : (titles[page]||'');
   document.getElementById('add-label').textContent = isTag ? '' : (addLabels[page]||'');
-  document.getElementById('add-btn').style.display = (isTag||page==='settings'||page==='stores'||page==='calendar')?'none':'flex';
-  const searchEl=document.querySelector('.search'); if(searchEl) searchEl.style.display = page==='calendar'?'none':'flex';
+  document.getElementById('add-btn').style.display = (isTag||page==='settings'||page==='stores'||page==='calendar'||page==='admin')?'none':'flex';
+  const searchEl=document.querySelector('.search'); if(searchEl) searchEl.style.display = (page==='calendar'||page==='admin')?'none':'flex';
   setExpanded(page);
   closeDetail();
   render();
@@ -5976,6 +5989,7 @@ function render(){
   else if(currentPage==='stores') renderStores(el,q);
   else if(currentPage==='calendar') renderCalendar(el);
   else if(currentPage==='ewaste') renderEWaste(el,q);
+  else if(currentPage==='admin') renderAdmin(el);
   else renderSettings(el);
   buildCompanySubnav();
   buildCategorySubnav();
@@ -6813,30 +6827,138 @@ setTimeout(function(){
 }, 600);
 
 /* ============================================================
-   LOGIN GATE — cosmetic, client-side only.
-   NOT a real security boundary: the page and its data are
-   fully client-side, so this can be bypassed. Use Cloudflare
-   Access for genuine protection (see DEPLOY.md).
+   LOGIN GATE + USER MANAGEMENT — cosmetic, client-side only.
+   NOT a real security boundary: accounts live in this browser's
+   localStorage and the gate can be bypassed. Use Cloudflare
+   Access for genuine, shared, enforced access (see DEPLOY.md).
 
-   To change credentials:
-     1. open the browser console on the page
-     2. run:  whosHash('your-new-password')
-     3. paste the result into PASS_HASH below, set USERNAME to taste
-   Default login — username: t360group   password: (set by owner)
+   Accounts are managed in-app from the Admin page (admins only).
+   The seed admin below is only used the first time the app runs
+   on a device (before any accounts exist in storage). To change
+   the seed password: run whosHash('new-password') in the console
+   and paste the result into DEFAULT_ADMIN.passHash.
    ============================================================ */
 function whosHash(s){
   s=String(s); let h1=5381,h2=0;
   for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=((h1<<5)+h1+c)>>>0;h2=(c+(h2<<6)+(h2<<16)-h2)>>>0;}
   return ('0000000'+h1.toString(16)).slice(-8)+('0000000'+h2.toString(16)).slice(-8);
 }
-const AUTH_USERNAME = 't360group';
-const AUTH_PASS_HASH = 'd9f571c815bd2d5d';      // whosHash('<set by owner>')
-const AUTH_KEY = 'whos-auth';
+const USERS_KEY = 'whos-users';
+const AUTH_KEY = 'whos-auth';            // session flag: signed in
+const AUTH_USER_KEY = 'whos-auth-user';  // session: signed-in username
+const DEFAULT_ADMIN = { username:'t360group', passHash:'d9f571c815bd2d5d', role:'admin' };
 
+function loadUsers(){
+  let arr=null;
+  try{ arr=JSON.parse(localStorage.getItem(USERS_KEY)||'null'); }catch(e){}
+  if(!Array.isArray(arr) || !arr.length){
+    arr=[{username:DEFAULT_ADMIN.username, passHash:DEFAULT_ADMIN.passHash, role:'admin', createdAt:Date.now()}];
+    try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }catch(e){}
+  }
+  return arr;
+}
+function saveUsers(arr){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }catch(e){} }
+function findUser(name){ name=String(name||'').toLowerCase(); return loadUsers().find(u=>String(u.username).toLowerCase()===name)||null; }
+function currentUser(){ try{ return findUser(sessionStorage.getItem(AUTH_USER_KEY)); }catch(e){ return null; } }
+function isAdmin(){ const u=currentUser(); return !!u && u.role==='admin'; }
+function adminCount(){ return loadUsers().filter(u=>u.role==='admin').length; }
+
+function applyAuthUI(){
+  const u=currentUser();
+  const adminNav=document.getElementById('nav-admin');
+  if(adminNav) adminNav.style.display = (u && u.role==='admin') ? 'flex' : 'none';
+  const who=document.getElementById('sidebar-user');
+  if(who) who.textContent = u ? (u.username + (u.role==='admin' ? ' · admin' : '')) : '';
+}
 function whosLogout(){
-  try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
+  try{ sessionStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(AUTH_USER_KEY); }catch(e){}
   location.reload();
 }
+
+// ----- Admin actions (guarded so only admins can mutate) -----
+function jsStr(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function adminAddUser(){
+  const msg=document.getElementById('admin-msg');
+  const set=(t,ok)=>{ if(msg){ msg.textContent=t; msg.className='admin-msg '+(ok?'ok':'err'); } };
+  if(!isAdmin()) return set('Only admins can add users.',false);
+  const uEl=document.getElementById('admin-new-user'), pEl=document.getElementById('admin-new-pass'), rEl=document.getElementById('admin-new-role');
+  const name=(uEl.value||'').trim(), pass=pEl.value||'', role=(rEl.value==='admin'?'admin':'user');
+  if(name.length<2) return set('Enter a username (2+ characters).',false);
+  if(findUser(name)) return set('That username already exists.',false);
+  if(pass.length<6) return set('Password must be at least 6 characters.',false);
+  const arr=loadUsers();
+  arr.push({username:name, passHash:whosHash(pass), role:role, createdAt:Date.now()});
+  saveUsers(arr);
+  showToast('User “'+name+'” created'+(role==='admin'?' (admin)':''));   // toast survives the re-render
+  render();
+}
+function adminResetPassword(name){
+  if(!isAdmin()) return;
+  const np=prompt('Set a new password for "'+name+'":');
+  if(np===null) return;
+  if(String(np).length<6){ showToast('Password must be at least 6 characters'); return; }
+  const arr=loadUsers(); const u=arr.find(x=>x.username===name); if(!u) return;
+  u.passHash=whosHash(np); saveUsers(arr); showToast('Password updated for '+name);
+}
+function adminToggleRole(name){
+  if(!isAdmin()) return;
+  const arr=loadUsers(); const u=arr.find(x=>x.username===name); if(!u) return;
+  if(u.role==='admin' && adminCount()<=1){ showToast('At least one admin is required'); return; }
+  u.role = (u.role==='admin') ? 'user' : 'admin';
+  saveUsers(arr); applyAuthUI(); render();
+}
+function adminDeleteUser(name){
+  if(!isAdmin()) return;
+  const me=currentUser();
+  if(me && me.username===name){ showToast("You can't delete your own account"); return; }
+  const arr=loadUsers(); const u=arr.find(x=>x.username===name); if(!u) return;
+  if(u.role==='admin' && adminCount()<=1){ showToast('At least one admin is required'); return; }
+  if(!confirm('Delete user "'+name+'"? This cannot be undone.')) return;
+  saveUsers(arr.filter(x=>x.username!==name)); showToast('Deleted '+name); render();
+}
+function renderAdmin(el){
+  if(!isAdmin()){
+    el.innerHTML='<div class="section"><div class="empty">You need an administrator account to manage users.</div></div>';
+    return;
+  }
+  const users=loadUsers(); const me=currentUser();
+  const rows=users.map(u=>{
+    const isMe=me && me.username===u.username;
+    const created=u.createdAt?new Date(u.createdAt).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    return `<tr>
+      <td style="font-weight:600">${esc(u.username)}${isMe?' <span class="badge badge-gray">you</span>':''}</td>
+      <td>${u.role==='admin'?'<span class="badge badge-blue">Admin</span>':'<span class="badge badge-gray">User</span>'}</td>
+      <td style="font-size:12px;color:var(--color-text-secondary)">${created}</td>
+      <td><div class="admin-actions">
+        <button class="btn btn-outline btn-sm" onclick="adminResetPassword('${jsStr(u.username)}')">Reset password</button>
+        <button class="btn btn-outline btn-sm" onclick="adminToggleRole('${jsStr(u.username)}')">${u.role==='admin'?'Make user':'Make admin'}</button>
+        <button class="btn btn-outline btn-sm danger" onclick="adminDeleteUser('${jsStr(u.username)}')"${isMe?' disabled title="You can&#39;t delete your own account"':''}>Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`
+  <div class="section" style="max-width:620px">
+    <div class="section-header"><h2><i class="ti ti-user-plus" aria-hidden="true" style="margin-right:7px"></i>Add user</h2></div>
+    <div class="field-row">
+      <div class="field"><label>Username</label><input id="admin-new-user" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. jsmith" onkeydown="if(event.key==='Enter')adminAddUser()"></div>
+      <div class="field"><label>Password</label><input id="admin-new-pass" type="password" autocomplete="new-password" placeholder="min 6 characters" onkeydown="if(event.key==='Enter')adminAddUser()"></div>
+      <div class="field" style="max-width:140px"><label>Role</label><select id="admin-new-role"><option value="user">User</option><option value="admin">Admin</option></select></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
+      <button class="btn btn-primary" onclick="adminAddUser()"><i class="ti ti-plus" aria-hidden="true"></i>Create user</button>
+      <span class="admin-msg" id="admin-msg"></span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Users</h2><span class="section-count">${users.length} account${users.length!==1?'s':''}</span></div>
+    <table class="table">
+      <thead><tr><th>Username</th><th style="width:90px">Role</th><th style="width:120px">Created</th><th style="width:340px">Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  <div class="hint" style="margin-top:14px;max-width:760px"><b>Heads up:</b> accounts are stored in this browser only and gate the in-app login — they don't sync between devices and can be bypassed by a technical user. For enforced, shared access control use Cloudflare Access (see DEPLOY.md).</div>`;
+}
+
 (function(){
   const screen=document.getElementById('login-screen');
   const form=document.getElementById('login-form');
@@ -6844,11 +6966,12 @@ function whosLogout(){
   const err=document.getElementById('login-error');
   if(!screen||!form) return;
 
-  function unlock(){
-    try{ sessionStorage.setItem(AUTH_KEY,'1'); }catch(e){}
+  function unlock(username){
+    try{ sessionStorage.setItem(AUTH_KEY,'1'); if(username) sessionStorage.setItem(AUTH_USER_KEY,username); }catch(e){}
     screen.hidden=true;
     if(appEl) appEl.inert=false;
     document.body.style.overflow='';
+    applyAuthUI();
   }
   function lock(){
     screen.hidden=false;
@@ -6859,15 +6982,16 @@ function whosLogout(){
 
   let authed=false;
   try{ authed=sessionStorage.getItem(AUTH_KEY)==='1'; }catch(e){}
-  if(authed) unlock(); else lock();
+  if(authed){ unlock(); } else { lock(); }
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
-    const u=document.getElementById('login-user').value.trim();
+    const name=document.getElementById('login-user').value.trim();
     const p=document.getElementById('login-pass').value;
-    if(u===AUTH_USERNAME && whosHash(p)===AUTH_PASS_HASH){
+    const u=findUser(name);
+    if(u && whosHash(p)===u.passHash){
       err.classList.remove('show');
-      unlock();
+      unlock(u.username);
     } else {
       err.classList.add('show');
       const pf=document.getElementById('login-pass'); pf.value=''; pf.focus();
