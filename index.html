@@ -216,6 +216,9 @@ html[data-theme="dark"] .nav-badge.nav-badge-cal{background:#8b5cf6}
 .nav-item.expanded .chev{transform:rotate(90deg)}
 .subnav{display:none;flex-direction:column;gap:1px;margin:1px 0 3px}
 .subnav.open{display:flex}
+/* Always-visible row(s) under a collapsible nav item (e.g. Couriers → Overdue) */
+.subnav-static{display:flex;flex-direction:column;gap:1px}
+.subnav-static:empty{display:none}
 .subnav-item{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:6px 10px 6px 39px;font-size:12.5px;cursor:pointer;
@@ -568,10 +571,11 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <div class="nav-item expanded" id="nav-categories" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped by activity"><i class="ti ti-tags" aria-hidden="true"></i><span>Calendar Activity</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
       <div class="subnav open" id="subnav-categories"></div>
       <div class="nav-item active" data-page="items" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
-      <div class="nav-item expanded" data-page="serials" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
-      <div class="subnav open" id="subnav-serials"></div>
-      <div class="nav-item expanded" data-page="couriers" id="nav-couriers" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
-      <div class="subnav open" id="subnav-couriers"></div>
+      <div class="nav-item" data-page="serials" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
+      <div class="subnav" id="subnav-serials"></div>
+      <div class="nav-item" data-page="couriers" id="nav-couriers" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
+      <div class="subnav" id="subnav-couriers"></div>
+      <div class="subnav-static" id="couriers-overdue"></div>
       <div class="nav-item" data-page="movements" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
       <div class="nav-item" data-page="ewaste" id="nav-ewaste" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
       <div class="nav-item" data-page="stores" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
@@ -5868,12 +5872,15 @@ function buildCompanySubnav(){
       const k=String(it.key).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `<div class="subnav-item" data-page="${page}" data-key="${String(it.key).replace(/"/g,'&quot;')}" onclick="navSub('${page}','${k}')"><span>${it.label}</span><span class="cnt">${cnt}</span></div>`;
     }).join('');
-    if(page==='couriers'){
-      const overdueCount=state.couriers.filter(isOverdue).length;
-      html+=`<div class="subnav-item subnav-overdue" data-page="couriers" data-key="__overdue__" onclick="navOverdue()" title="All shipments past the 3–5 business-day window, across every company"><span><i class="ti ti-alert-triangle" aria-hidden="true"></i> Overdue</span><span class="cnt">${overdueCount}</span></div>`;
-    }
     host.innerHTML=html;
   });
+  // Overdue sits in its own always-visible row so it stays reachable even when
+  // the Couriers company list is collapsed.
+  const od=document.getElementById('couriers-overdue');
+  if(od){
+    const overdueCount=state.couriers.filter(isOverdue).length;
+    od.innerHTML=`<div class="subnav-item subnav-overdue" data-page="couriers" data-key="__overdue__" onclick="navOverdue()" title="All shipments past the 3–5 business-day window, across every company"><span><i class="ti ti-alert-triangle" aria-hidden="true"></i> Overdue</span><span class="cnt">${overdueCount}</span></div>`;
+  }
   updateSubnavActive();
 }
 function navSub(page,key){
@@ -5912,12 +5919,10 @@ function updateCategoryActive(){
   });
 }
 function setExpanded(page){
-  // Submenus are persistent: navigating to a page opens its menu but never
-  // closes the other. Use the chevron (toggleSub) to collapse a menu manually.
-  if(page==='serials'||page==='couriers'){
-    document.getElementById('nav-'+page)?.classList.add('expanded');
-    document.getElementById('subnav-'+page)?.classList.add('open');
-  }
+  // Serial numbers and Couriers are collapsible fields: they start collapsed and
+  // are opened/closed only via their chevron (toggleSub), so navigating to the
+  // page no longer force-expands the company list. The Couriers "Overdue" row
+  // lives outside the collapsible list and stays visible at all times.
   if(typeof page==='string' && (page.indexOf('tag:')===0 || TAG_PAGE_OVERLAP[page] || Object.values(TAG_PAGE_OVERLAP).indexOf(page)!==-1)){
     document.getElementById('nav-categories')?.classList.add('expanded');
     document.getElementById('subnav-categories')?.classList.add('open');
