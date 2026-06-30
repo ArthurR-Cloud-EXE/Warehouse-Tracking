@@ -155,13 +155,14 @@ body{
 
 /* ---------- Sidebar ---------- */
 .sidebar{
-  width:224px;
+  width:228px;
   flex-shrink:0;
   display:flex;
   flex-direction:column;
   padding:0 0 .75rem;
   background:var(--color-background-secondary);
   border-right:1px solid var(--color-border-tertiary);
+  overflow-y:auto;
 }
 .logo{
   display:flex;flex-direction:column;
@@ -186,67 +187,37 @@ body{
   margin-top:3px;font-size:10px;letter-spacing:.04em;text-transform:none;
   color:var(--color-text-tertiary);font-weight:500;
 }
-.nav-group{padding:0 .6rem;display:flex;flex-direction:column;gap:2px}
+.nav-group{padding:0 .6rem;display:flex;flex-direction:column;gap:3px}
+.nav-group + .nav-group{margin-top:.5rem}
 .nav-label{
-  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--color-text-tertiary);padding:.6rem .55rem .3rem;
+  font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--color-text-tertiary);padding:.55rem .55rem .35rem;
 }
 .nav-item{
   display:flex;align-items:center;gap:11px;
-  padding:8px 10px;font-size:13.5px;font-weight:500;cursor:pointer;
+  padding:9px 10px;font-size:13.5px;font-weight:500;cursor:pointer;
   color:var(--color-text-secondary);
   border-radius:var(--border-radius-md);
   transition:background .12s ease,color .12s ease;
 }
-.nav-item:hover{background:var(--nav-hover);color:var(--color-text-primary)}
+/* ---- Per-operation colour ----
+   Each nav item carries --op-l (light) / --op-d (dark) inline. The icon is
+   always tinted with the operation's colour; hover and the active state take
+   the full colour with a soft wash, so every operation is identifiable without
+   a noisy sidebar. Items with no colour fall back to a neutral tone. */
+.nav-item{--op:var(--op-l,var(--color-text-tertiary))}
+html[data-theme="dark"] .nav-item{--op:var(--op-d,var(--op-l,var(--color-text-tertiary)))}
+.nav-item i{font-size:18px;color:var(--op);transition:color .12s ease}
+.nav-item:hover{background:color-mix(in srgb,var(--op) 12%,transparent);color:var(--op)}
+.nav-item:hover i{color:var(--op)}
 .nav-item.active{
-  background:var(--color-background-primary);
-  color:var(--accent-deep);font-weight:600;
-  box-shadow:var(--shadow-sm);
+  background:color-mix(in srgb,var(--op) 15%,transparent);
+  color:var(--op);font-weight:600;
 }
-.nav-item.active i{color:var(--accent)}
-.nav-item i{font-size:18px;color:var(--color-text-tertiary);transition:color .12s ease}
-/* Purple Calendar nav item for easy identification */
-.nav-item.nav-calendar,.nav-item.nav-calendar i{color:#7c3aed}
-.nav-item.nav-calendar{font-weight:600}
-.nav-item.nav-calendar:hover{background:rgba(124,58,237,.10)}
-.nav-item.nav-calendar:hover,.nav-item.nav-calendar:hover i{color:#6d28d9}
-.nav-item.nav-calendar.active{background:var(--color-background-primary);box-shadow:var(--shadow-sm)}
-.nav-item.nav-calendar.active,.nav-item.nav-calendar.active i{color:#6d28d9}
-html[data-theme="dark"] .nav-item.nav-calendar,html[data-theme="dark"] .nav-item.nav-calendar i{color:#b794f6}
-html[data-theme="dark"] .nav-item.nav-calendar:hover{background:rgba(167,139,250,.16)}
-html[data-theme="dark"] .nav-item.nav-calendar.active,html[data-theme="dark"] .nav-item.nav-calendar.active i{color:#c4b0f9}
-/* Blue Couriers nav item */
-#nav-couriers,#nav-couriers i{color:#2563eb}
-#nav-couriers{font-weight:600}
-#nav-couriers:hover{background:rgba(37,99,235,.10)}
-#nav-couriers:hover,#nav-couriers:hover i{color:#1d4ed8}
-#nav-couriers.active{background:var(--color-background-primary);box-shadow:var(--shadow-sm)}
-#nav-couriers.active,#nav-couriers.active i{color:#1d4ed8}
-html[data-theme="dark"] #nav-couriers,html[data-theme="dark"] #nav-couriers i{color:#60a5fa}
-html[data-theme="dark"] #nav-couriers:hover{background:rgba(96,165,250,.16)}
-html[data-theme="dark"] #nav-couriers.active,html[data-theme="dark"] #nav-couriers.active i{color:#93c5fd}
-/* Green Calendar Activity nav item */
-#nav-categories,#nav-categories i{color:#16a34a}
-#nav-categories{font-weight:600}
-#nav-categories:hover{background:rgba(22,163,74,.10)}
-#nav-categories:hover,#nav-categories:hover i{color:#15803d}
-#nav-categories.active{background:var(--color-background-primary);box-shadow:var(--shadow-sm)}
-#nav-categories.active,#nav-categories.active i{color:#15803d}
-html[data-theme="dark"] #nav-categories,html[data-theme="dark"] #nav-categories i{color:#4ade80}
-html[data-theme="dark"] #nav-categories:hover{background:rgba(74,222,128,.16)}
-html[data-theme="dark"] #nav-categories.active,html[data-theme="dark"] #nav-categories.active i{color:#86efac}
-/* Orange E-Waste nav item for easy identification */
-#nav-ewaste,#nav-ewaste i{color:#ea580c}
-#nav-ewaste{font-weight:600}
-#nav-ewaste:hover{background:rgba(234,88,12,.10)}
-#nav-ewaste:hover,#nav-ewaste:hover i{color:#c2410c}
-#nav-ewaste.active{background:var(--color-background-primary);box-shadow:var(--shadow-sm)}
-#nav-ewaste.active,#nav-ewaste.active i{color:#c2410c}
-html[data-theme="dark"] #nav-ewaste,html[data-theme="dark"] #nav-ewaste i{color:#fb923c}
-html[data-theme="dark"] #nav-ewaste:hover{background:rgba(251,146,60,.16)}
-html[data-theme="dark"] #nav-ewaste.active,html[data-theme="dark"] #nav-ewaste.active i{color:#fdba74}
-.nav-item .chev{margin-left:auto;font-size:15px;transition:transform .15s ease;cursor:pointer;padding:3px;margin-right:-3px;border-radius:5px}
+.nav-item.active i{color:var(--op)}
+.nav-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--op)}
+.nav-item{position:relative}
+.nav-item .chev{margin-left:auto;font-size:15px;transition:transform .15s ease;cursor:pointer;padding:3px;margin-right:-3px;border-radius:5px;color:var(--color-text-tertiary)}
 .nav-badge{margin-left:auto;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#f97316;color:#fff;font-size:10.5px;font-weight:700;line-height:1;display:none;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .nav-badge.show{display:inline-flex}
 .nav-badge.nav-badge-cal{background:#7c3aed}
@@ -686,20 +657,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <span class="ver">v0.1.1</span>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Operations</div>
-      <div class="nav-item nav-calendar" data-page="calendar" tabindex="0" role="button" onclick="switchPage('calendar')" onkeydown="if(event.key==='Enter')switchPage('calendar')"><i class="ti ti-calendar-event" aria-hidden="true"></i><span>Calendar</span><span class="nav-badge nav-badge-cal" id="calendar-badge" title="Tasks to complete"></span></div>
-      <div class="nav-item expanded" id="nav-categories" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped by activity"><i class="ti ti-tags" aria-hidden="true"></i><span>Calendar Activity</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
+      <div class="nav-label">Schedule</div>
+      <div class="nav-item" data-page="calendar" style="--op-l:#7c3aed;--op-d:#b794f6" tabindex="0" role="button" onclick="switchPage('calendar')" onkeydown="if(event.key==='Enter')switchPage('calendar')"><i class="ti ti-calendar-event" aria-hidden="true"></i><span>Calendar</span><span class="nav-badge nav-badge-cal" id="calendar-badge" title="Tasks to complete"></span></div>
+      <div class="nav-item expanded" id="nav-categories" style="--op-l:#16a34a;--op-d:#4ade80" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped by activity"><i class="ti ti-tags" aria-hidden="true"></i><span>Calendar Activity</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
       <div class="subnav open" id="subnav-categories"></div>
-      <div class="nav-item active" data-page="items" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
-      <div class="nav-item" data-page="serials" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Inventory</div>
+      <div class="nav-item active" data-page="items" style="--op-l:#4f46e5;--op-d:#a5b4fc" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
+      <div class="nav-item" data-page="serials" id="nav-serials" style="--op-l:#0891b2;--op-d:#67e8f9" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
       <div class="subnav" id="subnav-serials"></div>
-      <div class="nav-item" data-page="couriers" id="nav-couriers" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
+      <div class="nav-item" data-page="stocktake" id="nav-stocktake" style="--op-l:#c026d3;--op-d:#f0abfc" tabindex="0" role="button" onclick="switchPage('stocktake')" onkeydown="if(event.key==='Enter')switchPage('stocktake')"><i class="ti ti-clipboard-list" aria-hidden="true"></i><span>Stock Take</span><span class="nav-badge" id="stocktake-badge" title="Open count sheets"></span></div>
+      <div class="nav-item" data-page="stores" style="--op-l:#e11d48;--op-d:#fda4af" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Logistics</div>
+      <div class="nav-item" data-page="couriers" id="nav-couriers" style="--op-l:#2563eb;--op-d:#60a5fa" tabindex="0" role="button" onclick="switchPage('couriers')" onkeydown="if(event.key==='Enter')switchPage('couriers')"><i class="ti ti-truck-delivery" aria-hidden="true"></i><span>Couriers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('couriers',event)"></i></div>
       <div class="subnav" id="subnav-couriers"></div>
       <div class="subnav-static" id="couriers-overdue"></div>
-      <div class="nav-item" data-page="movements" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
-      <div class="nav-item" data-page="ewaste" id="nav-ewaste" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
-      <div class="nav-item" data-page="stocktake" id="nav-stocktake" tabindex="0" role="button" onclick="switchPage('stocktake')" onkeydown="if(event.key==='Enter')switchPage('stocktake')"><i class="ti ti-clipboard-list" aria-hidden="true"></i><span>Stock Take</span><span class="nav-badge" id="stocktake-badge" title="Open count sheets"></span></div>
-      <div class="nav-item" data-page="stores" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
+      <div class="nav-item" data-page="movements" style="--op-l:#d97706;--op-d:#fbbf24" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
+      <div class="nav-item" data-page="ewaste" id="nav-ewaste" style="--op-l:#0d9488;--op-d:#5eead4" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
     </div>
     <div class="sidebar-foot">
       <div class="nav-group">
