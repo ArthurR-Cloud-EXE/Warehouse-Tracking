@@ -5573,39 +5573,15 @@ function tagPillHtml(tag){
 }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+// Transactional records start empty — build them up via the in-app Add forms.
+// (These arrays are the seed data; reference data such as the store directory,
+// company list and item categories is kept separately below.)
 const state = {
-  items: [
-    {id:'ITM-001',name:'Laptop 15" Pro',sku:'LP-15-PRO',category:'Electronics',company:'BSO',location:'A1-03',qty:12,status:'In stock'},
-    {id:'ITM-002',name:'Wireless Keyboard',sku:'WK-BLK-01',category:'Peripherals',company:'TFX',location:'B2-11',qty:45,status:'In stock'},
-    {id:'ITM-003',name:'USB-C Hub 7-port',sku:'UC-HUB-7P',category:'Accessories',company:'Future Shop',location:'C3-05',qty:3,status:'Low stock'},
-    {id:'ITM-004',name:'Monitor 27" 4K',sku:'MN-27-4K',category:'Electronics',company:'Reximo',location:'A2-01',qty:0,status:'Out of stock'},
-    {id:'ITM-005',name:'Office Chair Ergonomic',sku:'OC-ERG-BL',category:'Furniture',company:'BSO',location:'D1-02',qty:8,status:'In stock'},
-  ],
-  serials: [
-    {sn:'SN-2024-78421',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Order #10231',status:'Shipped',location:'In transit'},
-    {sn:'SN-2024-78422',item:'Laptop 15" Pro',itemId:'ITM-001',assigned:'Stock',status:'In stock',location:'A1-03'},
-    {sn:'SN-2024-81009',item:'Monitor 27" 4K',itemId:'ITM-004',assigned:'Order #10198',status:'Delivered',location:'Customer'},
-    {sn:'SN-2024-55012',item:'USB-C Hub 7-port',itemId:'ITM-003',assigned:'Order #10245',status:'Processing',location:'A1-03'},
-    {sn:'SN-2024-33100',item:'Wireless Keyboard',itemId:'ITM-002',assigned:'Stock',status:'In stock',location:'B2-11'},
-  ],
-  couriers: [
-    {id:'TRK-90012',courier:'FedEx',service:'Express',company:'BSO',origin:'Sydney Warehouse',dest:'Melbourne, VIC',status:'In transit',eta:'27 Jun 2026',dispatched:'2026-06-17',items:['SN-2024-78421'],updated:'26 Jun 12:34',salesOrder:'SO-44021',ticket:'TKT-1184'},
-    {id:'TRK-90008',courier:'Australia Post',service:'Standard',company:'Reximo',origin:'Sydney Warehouse',dest:'Brisbane, QLD',status:'Delivered',eta:'24 Jun 2026',dispatched:'2026-06-20',items:['SN-2024-81009'],updated:'24 Jun 09:10',salesOrder:'SO-43997',ticket:'TKT-1170'},
-    {id:'TRK-90015',courier:'DHL',service:'Same Day',company:'Future Shop',origin:'Sydney Warehouse',dest:'Parramatta, NSW',status:'Out for delivery',eta:'26 Jun 2026',dispatched:'2026-06-25',items:['SN-2024-55012'],updated:'26 Jun 08:55',salesOrder:'SO-44033',ticket:'TKT-1190'},
-    {id:'TRK-90018',courier:'StarTrack',service:'Express',company:'TFX',origin:'Sydney Warehouse',dest:'Perth, WA',status:'Processing',eta:'28 Jun 2026',dispatched:'2026-06-20',items:[],updated:'26 Jun 07:00',salesOrder:'SO-44040',ticket:''},
-  ],
-  movements: [
-    {id:'MOV-441',type:'Outbound',item:'Laptop 15" Pro',category:'Electronics',sn:'SN-2024-78421',from:'A1-03',to:'Dispatch',by:'Blooms The Chemist Padstow',date:'26 Jun 14:10'},
-    {id:'MOV-440',type:'Inbound',item:'Wireless Keyboard',category:'Peripherals',sn:'SN-2024-33100',from:'Receiving',to:'B2-11',by:'Blooms The Chemist Gordon',date:'26 Jun 11:05'},
-    {id:'MOV-439',type:'Transfer',item:'USB-C Hub 7-port',category:'Accessories',sn:'SN-2024-55012',from:'C3-07',to:'A1-03',by:'Blooms The Chemist Windsor',date:'25 Jun 16:30'},
-    {id:'MOV-438',type:'Outbound',item:'Monitor 27" 4K',category:'Electronics',sn:'SN-2024-81009',from:'A2-01',to:'Dispatch',by:'Blooms The Chemist Mount Ommaney',date:'23 Jun 09:00'},
-  ],
-  ewaste: [
-    {id:'EW-1001',store:'Blooms The Chemist Padstow',company:'BSO',qty:6,booked:'2026-06-09',processed:false,source:'manual'},
-    {id:'EW-1002',store:'Blooms The Chemist Gordon',company:'BSO',qty:20,booked:'2026-06-13',processed:false,source:'manual'},
-    {id:'EW-1003',store:'Blooms The Chemist Windsor',company:'BSO',qty:12,booked:'2026-06-22',processed:false,source:'manual'},
-    {id:'EW-1000',store:'Blooms The Chemist Mount Ommaney',company:'BSO',qty:30,booked:'2026-05-28',processed:true,source:'manual'},
-  ]
+  items: [],
+  serials: [],
+  couriers: [],
+  movements: [],
+  ewaste: []
 };
 
 const itemStatuses = ['In stock','Low stock','Out of stock','Reserved'];
