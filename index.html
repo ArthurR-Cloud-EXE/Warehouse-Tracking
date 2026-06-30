@@ -565,6 +565,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
     <div class="nav-group">
       <div class="nav-label">Operations</div>
       <div class="nav-item nav-calendar" data-page="calendar" tabindex="0" role="button" onclick="switchPage('calendar')" onkeydown="if(event.key==='Enter')switchPage('calendar')"><i class="ti ti-calendar-event" aria-hidden="true"></i><span>Calendar</span><span class="nav-badge nav-badge-cal" id="calendar-badge" title="Tasks to complete"></span></div>
+      <div class="nav-item expanded" id="nav-categories" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped as categories"><i class="ti ti-tags" aria-hidden="true"></i><span>Categories</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
+      <div class="subnav open" id="subnav-categories"></div>
       <div class="nav-item active" data-page="items" tabindex="0" role="button" onclick="switchPage('items')" onkeydown="if(event.key==='Enter')switchPage('items')"><i class="ti ti-package" aria-hidden="true"></i><span>Items</span></div>
       <div class="nav-item expanded" data-page="serials" id="nav-serials" tabindex="0" role="button" onclick="switchPage('serials')" onkeydown="if(event.key==='Enter')switchPage('serials')"><i class="ti ti-barcode" aria-hidden="true"></i><span>Serial numbers</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('serials',event)"></i></div>
       <div class="subnav open" id="subnav-serials"></div>
@@ -573,8 +575,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <div class="nav-item" data-page="movements" tabindex="0" role="button" onclick="switchPage('movements')" onkeydown="if(event.key==='Enter')switchPage('movements')"><i class="ti ti-arrows-transfer-up" aria-hidden="true"></i><span>Movements</span></div>
       <div class="nav-item" data-page="ewaste" id="nav-ewaste" tabindex="0" role="button" onclick="switchPage('ewaste')" onkeydown="if(event.key==='Enter')switchPage('ewaste')"><i class="ti ti-recycle" aria-hidden="true"></i><span>E-Waste</span><span class="nav-badge" id="ewaste-badge" title="E-waste ready to process"></span></div>
       <div class="nav-item" data-page="stores" tabindex="0" role="button" onclick="switchPage('stores')" onkeydown="if(event.key==='Enter')switchPage('stores')"><i class="ti ti-building-store" aria-hidden="true"></i><span>Stores</span></div>
-      <div class="nav-item expanded" id="nav-categories" tabindex="0" role="button" onclick="toggleSub('categories',event)" onkeydown="if(event.key==='Enter')toggleSub('categories',event)" title="Calendar tags, grouped as categories"><i class="ti ti-tags" aria-hidden="true"></i><span>Categories</span><i class="ti ti-chevron-right chev" aria-hidden="true" onclick="toggleSub('categories',event)"></i></div>
-      <div class="subnav open" id="subnav-categories"></div>
     </div>
     <div class="sidebar-foot">
       <div class="nav-group">
