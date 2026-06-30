@@ -75,10 +75,15 @@ deterrent only.
   runs on a device.
 - **Two-factor (6-digit codes):** every account uses an authenticator-app code
   (TOTP, RFC 6238 — Google Authenticator, Authy, 1Password, etc.) in addition to
-  the password. On first login the screen shows a setup key to add to the app;
-  enter the current 6-digit code to finish, and it's required on every login
-  after that. (Verification is client-side, so it deters but does not enforce —
-  Cloudflare Access is still the real boundary.)
+  the password. On first login the screen shows a **scannable QR code** (and a
+  manual key) to add to the app; enter the current 6-digit code to finish, and
+  it's required on every login after that.
+- **The secret is deterministic** (derived from the username), so it is the
+  **same on every device** — your authenticator keeps working when you sign in
+  on a new device or browser; you never have to re-enrol it. A new device may
+  show the QR again, but your existing code already works, so just enter it.
+  (Verification is still client-side, so it deters but does not enforce —
+  Cloudflare Access is the real boundary.)
 - **Managing users:** sign in as an admin and open the **Admin** page (sidebar →
   System → Admin). From there you can create users, assign **Admin** or **User**
   roles, reset passwords, view a user's **2FA key** (to provision it for them),
