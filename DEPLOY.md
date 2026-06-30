@@ -73,10 +73,18 @@ deterrent only.
   intentionally not stored in this repo (only its hash lives in `index.html`, in
   `DEFAULT_ADMIN`). This account is created automatically the first time the app
   runs on a device.
+- **Two-factor (6-digit codes):** every account uses an authenticator-app code
+  (TOTP, RFC 6238 — Google Authenticator, Authy, 1Password, etc.) in addition to
+  the password. On first login the screen shows a setup key to add to the app;
+  enter the current 6-digit code to finish, and it's required on every login
+  after that. (Verification is client-side, so it deters but does not enforce —
+  Cloudflare Access is still the real boundary.)
 - **Managing users:** sign in as an admin and open the **Admin** page (sidebar →
   System → Admin). From there you can create users, assign **Admin** or **User**
-  roles, reset passwords, and delete accounts. The app keeps at least one admin
-  and won't let you delete your own account.
+  roles, reset passwords, view a user's **2FA key** (to provision it for them),
+  **Reset 2FA** (issue a new key — they re-enrol next login), and delete
+  accounts. The app keeps at least one admin and won't let you delete your own
+  account.
 - **Where accounts live:** in this browser's `localStorage` (`whos-users`), so
   they **do not sync between devices or users** and reset if storage is cleared.
   This is a convenience layer, not shared access control — for that, use

@@ -597,6 +597,19 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
   padding:.55rem .7rem;border-radius:var(--border-radius-md);
 }
 .login-error.show{display:block}
+.login-field[hidden],.totp-enroll[hidden]{display:none}
+.login-code-input{letter-spacing:.5em;text-align:center;font-family:var(--font-mono);font-size:18px;font-weight:600}
+.login-code-input::placeholder{letter-spacing:.4em}
+.totp-enroll{margin:.2rem 0 1.1rem;padding:.85rem .9rem;border:1px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+.totp-enroll h4{font-size:12.5px;font-weight:700;margin-bottom:.45rem;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
+.totp-enroll ol{margin:0 0 .2rem 1.1rem;padding:0;font-size:12px;color:var(--color-text-secondary);line-height:1.55}
+.totp-key{display:flex;align-items:center;gap:8px;margin:.45rem 0}
+.totp-key code{flex:1;font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.04em;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:6px;padding:.45rem .55rem;word-break:break-all;color:var(--color-text-primary)}
+.totp-copy{flex:none;cursor:pointer;border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);border-radius:6px;padding:.45rem .55rem;font-size:13px;line-height:1}
+.totp-copy:hover{color:var(--color-text-primary)}
+.login-backlink{display:none;width:100%;margin-top:.7rem;background:none;border:none;color:var(--color-text-secondary);font:inherit;font-size:12.5px;cursor:pointer;text-align:center}
+.login-backlink:hover{color:var(--accent)}
+.login-backlink.show{display:block}
 .login-foot{margin-top:1.3rem;padding-top:1rem;border-top:1px solid var(--color-border-tertiary);font-size:11px;line-height:1.5;color:var(--color-text-tertiary);display:flex;justify-content:space-between;align-items:center;gap:10px}
 .login-foot .login-ver{font-weight:600;opacity:.85;font-variant-numeric:tabular-nums}
 </style>
@@ -607,17 +620,31 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
       <span class="login-name" id="login-title">WarehouseOS</span>
     </div>
     <div class="login-tagline">Inventory, serials, couriers &amp; e-waste — one platform.</div>
-    <div class="login-field">
+    <div class="login-field" id="field-user">
       <label for="login-user">Username</label>
-      <input id="login-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <input id="login-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false">
     </div>
-    <div class="login-field">
+    <div class="login-field" id="field-pass">
       <label for="login-pass">Password</label>
-      <input id="login-pass" name="password" type="password" autocomplete="current-password" required>
+      <input id="login-pass" name="password" type="password" autocomplete="current-password">
     </div>
-    <button class="login-btn" type="submit"><i class="ti ti-login-2" aria-hidden="true"></i> Sign in</button>
+    <div class="totp-enroll" id="totp-enroll" hidden>
+      <h4><i class="ti ti-shield-lock" aria-hidden="true"></i> Set up two-factor authentication</h4>
+      <ol>
+        <li>Open an authenticator app (Google Authenticator, Authy, 1Password…).</li>
+        <li>Add an account and enter this setup key:</li>
+      </ol>
+      <div class="totp-key"><code id="totp-key"></code><button type="button" class="totp-copy" id="totp-copy" title="Copy key"><i class="ti ti-copy" aria-hidden="true"></i></button></div>
+      <ol start="3"><li>Enter the 6-digit code it shows below to finish.</li></ol>
+    </div>
+    <div class="login-field" id="field-code" hidden>
+      <label for="login-code">6-digit verification code</label>
+      <input id="login-code" class="login-code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    </div>
+    <button class="login-btn" type="submit" id="login-submit"><i class="ti ti-login-2" aria-hidden="true"></i> <span id="login-submit-label">Continue</span></button>
+    <button type="button" class="login-backlink" id="login-back">Use a different account</button>
     <div class="login-error" id="login-error" role="alert">Incorrect username or password.</div>
-    <div class="login-foot"><span>Secure sign-in · ends when you close the tab</span><span class="login-ver">v0.1.1</span></div>
+    <div class="login-foot"><span>Secure sign-in · two-factor protected</span><span class="login-ver">v0.1.1</span></div>
   </form>
 </div>
 
@@ -6909,6 +6936,76 @@ function whosHash(s){
   for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=((h1<<5)+h1+c)>>>0;h2=(c+(h2<<6)+(h2<<16)-h2)>>>0;}
   return ('0000000'+h1.toString(16)).slice(-8)+('0000000'+h2.toString(16)).slice(-8);
 }
+
+/* ----- TOTP (RFC 6238) — 6-digit authenticator codes, all client-side -----
+   SHA-1 / HMAC-SHA1 / Base32 implemented inline so codes can be verified
+   offline with no library. Same caveat as the rest of the gate: this runs
+   in the browser, so it deters but does not enforce. */
+function _sha1(msg){
+  function rotl(n,s){return (n<<s)|(n>>>(32-s));}
+  const ml=msg.length, padded=(((ml+8)>>6)+1)<<6;
+  const u=new Uint8Array(padded); u.set(msg); u[ml]=0x80;
+  const dv=new DataView(u.buffer);
+  const bits=ml*8;
+  dv.setUint32(padded-4, bits>>>0, false);
+  dv.setUint32(padded-8, Math.floor(bits/0x100000000), false);
+  let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+  const w=new Int32Array(80);
+  for(let i=0;i<padded;i+=64){
+    for(let t=0;t<16;t++) w[t]=dv.getInt32(i+t*4,false);
+    for(let t=16;t<80;t++) w[t]=rotl(w[t-3]^w[t-8]^w[t-14]^w[t-16],1);
+    let a=h0,b=h1,c=h2,d=h3,e=h4;
+    for(let t=0;t<80;t++){
+      let f,k;
+      if(t<20){f=(b&c)|((~b)&d);k=0x5A827999;}
+      else if(t<40){f=b^c^d;k=0x6ED9EBA1;}
+      else if(t<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;}
+      else{f=b^c^d;k=0xCA62C1D6;}
+      const tmp=(rotl(a,5)+f+e+k+w[t])|0;
+      e=d;d=c;c=rotl(b,30);b=a;a=tmp;
+    }
+    h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;
+  }
+  const out=new Uint8Array(20), odv=new DataView(out.buffer);
+  odv.setInt32(0,h0,false);odv.setInt32(4,h1,false);odv.setInt32(8,h2,false);odv.setInt32(12,h3,false);odv.setInt32(16,h4,false);
+  return out;
+}
+function _concat(a,b){ const c=new Uint8Array(a.length+b.length); c.set(a); c.set(b,a.length); return c; }
+function _hmacSha1(key,msg){
+  const B=64; if(key.length>B) key=_sha1(key);
+  const k=new Uint8Array(B); k.set(key);
+  const ip=new Uint8Array(B), op=new Uint8Array(B);
+  for(let i=0;i<B;i++){ ip[i]=k[i]^0x36; op[i]=k[i]^0x5c; }
+  return _sha1(_concat(op,_sha1(_concat(ip,msg))));
+}
+const _B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function base32encode(bytes){ let bits=0,val=0,out=''; for(let i=0;i<bytes.length;i++){ val=(val<<8)|bytes[i]; bits+=8; while(bits>=5){ out+=_B32[(val>>>(bits-5))&31]; bits-=5; } } if(bits>0) out+=_B32[(val<<(5-bits))&31]; return out; }
+function base32decode(s){ s=String(s).toUpperCase().replace(/[^A-Z2-7]/g,''); let bits=0,val=0; const out=[]; for(let i=0;i<s.length;i++){ const idx=_B32.indexOf(s[i]); if(idx<0)continue; val=(val<<5)|idx; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&0xff); bits-=8; } } return new Uint8Array(out); }
+function genTotpSecret(){
+  const bytes=new Uint8Array(20);
+  if(window.crypto&&crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for(let i=0;i<20;i++) bytes[i]=Math.floor(Math.random()*256);
+  return base32encode(bytes);
+}
+function totpAt(secret, t){
+  const key=base32decode(secret);
+  let c=Math.floor(t/30); const buf=new Uint8Array(8);
+  for(let i=7;i>=0;i--){ buf[i]=c&0xff; c=Math.floor(c/256); }
+  const h=_hmacSha1(key,buf), o=h[19]&0xf;
+  const bin=((h[o]&0x7f)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|(h[o+3]);
+  return ('00000'+(bin%1000000)).slice(-6);
+}
+function totpVerify(secret, code, win){
+  code=String(code||'').trim(); if(!/^\d{6}$/.test(code)||!secret) return false;
+  const now=Math.floor(Date.now()/1000); win=(win==null?1:win);
+  for(let w=-win;w<=win;w++){ if(totpAt(secret, now+w*30)===code) return true; }
+  return false;
+}
+function otpauthURI(user, secret){
+  return 'otpauth://totp/WarehouseOS:'+encodeURIComponent(user)+'?secret='+secret+'&issuer=WarehouseOS&algorithm=SHA1&digits=6&period=30';
+}
+function fmtSecret(s){ return String(s).replace(/(.{4})/g,'$1 ').trim(); }
+
 const USERS_KEY = 'whos-users';
 const AUTH_KEY = 'whos-auth';            // session flag: signed in
 const AUTH_USER_KEY = 'whos-auth-user';  // session: signed-in username
@@ -6919,8 +7016,11 @@ function loadUsers(){
   try{ arr=JSON.parse(localStorage.getItem(USERS_KEY)||'null'); }catch(e){}
   if(!Array.isArray(arr) || !arr.length){
     arr=[{username:DEFAULT_ADMIN.username, passHash:DEFAULT_ADMIN.passHash, role:'admin', createdAt:Date.now()}];
-    try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }catch(e){}
   }
+  // Every account gets a TOTP secret; accounts without one must enrol at next login.
+  let changed=false;
+  arr.forEach(u=>{ if(!u.totpSecret){ u.totpSecret=genTotpSecret(); u.totpConfirmed=false; changed=true; } });
+  if(changed){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }catch(e){} }
   return arr;
 }
 function saveUsers(arr){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }catch(e){} }
@@ -6953,10 +7053,26 @@ function adminAddUser(){
   if(findUser(name)) return set('That username already exists.',false);
   if(pass.length<6) return set('Password must be at least 6 characters.',false);
   const arr=loadUsers();
-  arr.push({username:name, passHash:whosHash(pass), role:role, createdAt:Date.now()});
+  arr.push({username:name, passHash:whosHash(pass), role:role, createdAt:Date.now(), totpSecret:genTotpSecret(), totpConfirmed:false});
   saveUsers(arr);
-  showToast('User “'+name+'” created'+(role==='admin'?' (admin)':''));   // toast survives the re-render
+  showToast('User “'+name+'” created'+(role==='admin'?' (admin)':'')+' — they set up 2FA at first login');
   render();
+}
+// Show a user's authenticator setup key (for provisioning on their behalf).
+function adminShow2FA(name){
+  if(!isAdmin()) return;
+  const u=findUser(name); if(!u) return;
+  prompt('Authenticator setup key for "'+name+'" — enter it in Google Authenticator / Authy '
+    +'(or paste the otpauth link below into a QR generator):\n\n'+fmtSecret(u.totpSecret)
+    +'\n\nStatus: '+(u.totpConfirmed?'confirmed':'pending first-login setup'), otpauthURI(u.username,u.totpSecret));
+}
+// Regenerate a user's 2FA secret; they must re-enrol next login.
+function adminReset2FA(name){
+  if(!isAdmin()) return;
+  if(!confirm('Reset two-factor for "'+name+'"? Their current authenticator entry will stop working and they\'ll set it up again at next login.')) return;
+  const arr=loadUsers(); const u=arr.find(x=>x.username===name); if(!u) return;
+  u.totpSecret=genTotpSecret(); u.totpConfirmed=false; saveUsers(arr);
+  showToast('2FA reset for '+name); render();
 }
 function adminResetPassword(name){
   if(!isAdmin()) return;
@@ -6994,8 +7110,11 @@ function renderAdmin(el){
     return `<tr>
       <td style="font-weight:600">${esc(u.username)}${isMe?' <span class="badge badge-gray">you</span>':''}</td>
       <td>${u.role==='admin'?'<span class="badge badge-blue">Admin</span>':'<span class="badge badge-gray">User</span>'}</td>
+      <td>${u.totpConfirmed?'<span class="badge badge-green">2FA on</span>':'<span class="badge badge-amber">2FA pending</span>'}</td>
       <td style="font-size:12px;color:var(--color-text-secondary)">${created}</td>
       <td><div class="admin-actions">
+        <button class="btn btn-outline btn-sm" onclick="adminShow2FA('${jsStr(u.username)}')">2FA key</button>
+        <button class="btn btn-outline btn-sm" onclick="adminReset2FA('${jsStr(u.username)}')">Reset 2FA</button>
         <button class="btn btn-outline btn-sm" onclick="adminResetPassword('${jsStr(u.username)}')">Reset password</button>
         <button class="btn btn-outline btn-sm" onclick="adminToggleRole('${jsStr(u.username)}')">${u.role==='admin'?'Make user':'Make admin'}</button>
         <button class="btn btn-outline btn-sm danger" onclick="adminDeleteUser('${jsStr(u.username)}')"${isMe?' disabled title="You can&#39;t delete your own account"':''}>Delete</button>
@@ -7018,7 +7137,7 @@ function renderAdmin(el){
   <div class="section">
     <div class="section-header"><h2>Users</h2><span class="section-count">${users.length} account${users.length!==1?'s':''}</span></div>
     <table class="table">
-      <thead><tr><th>Username</th><th style="width:90px">Role</th><th style="width:120px">Created</th><th style="width:340px">Actions</th></tr></thead>
+      <thead><tr><th>Username</th><th style="width:80px">Role</th><th style="width:104px">2FA</th><th style="width:110px">Created</th><th>Actions</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>
@@ -7032,35 +7151,57 @@ function renderAdmin(el){
   const err=document.getElementById('login-error');
   if(!screen||!form) return;
 
+  const fUser=document.getElementById('field-user'), fPass=document.getElementById('field-pass');
+  const fCode=document.getElementById('field-code'), enroll=document.getElementById('totp-enroll');
+  const back=document.getElementById('login-back'), label=document.getElementById('login-submit-label');
+  const userIn=document.getElementById('login-user'), passIn=document.getElementById('login-pass'), codeIn=document.getElementById('login-code');
+  let stage=1, pending=null;
+
+  function setErr(m){ if(m){ err.textContent=m; err.classList.add('show'); } else err.classList.remove('show'); }
   function unlock(username){
     try{ sessionStorage.setItem(AUTH_KEY,'1'); if(username) sessionStorage.setItem(AUTH_USER_KEY,username); }catch(e){}
-    screen.hidden=true;
-    if(appEl) appEl.inert=false;
-    document.body.style.overflow='';
-    applyAuthUI();
+    screen.hidden=true; if(appEl) appEl.inert=false; document.body.style.overflow=''; applyAuthUI();
   }
-  function lock(){
-    screen.hidden=false;
-    if(appEl) appEl.inert=true;
-    document.body.style.overflow='hidden';
-    const u=document.getElementById('login-user'); if(u) setTimeout(()=>u.focus(),0);
+  function lock(){ screen.hidden=false; if(appEl) appEl.inert=true; document.body.style.overflow='hidden'; toStage1(); }
+  function toStage1(){
+    stage=1; pending=null;
+    fUser.hidden=false; fPass.hidden=false; fCode.hidden=true; enroll.hidden=true;
+    back.classList.remove('show'); label.textContent='Continue';
+    setErr(''); passIn.value=''; codeIn.value='';
+    setTimeout(()=>userIn.focus(),0);
   }
+  function toStage2(u){
+    stage=2; pending=u;
+    fUser.hidden=true; fPass.hidden=true; fCode.hidden=false; back.classList.add('show');
+    label.textContent='Verify & sign in'; setErr('');
+    if(!u.totpConfirmed){ enroll.hidden=false; document.getElementById('totp-key').textContent=fmtSecret(u.totpSecret); }
+    else enroll.hidden=true;
+    codeIn.value=''; setTimeout(()=>codeIn.focus(),0);
+  }
+  back.addEventListener('click', toStage1);
+  codeIn.addEventListener('input', function(){ codeIn.value=codeIn.value.replace(/\D/g,'').slice(0,6); });
+  const copyBtn=document.getElementById('totp-copy');
+  if(copyBtn) copyBtn.addEventListener('click', function(){ if(pending){ try{ navigator.clipboard.writeText(pending.totpSecret); }catch(e){} showToast('Setup key copied'); } });
 
-  let authed=false;
-  try{ authed=sessionStorage.getItem(AUTH_KEY)==='1'; }catch(e){}
-  if(authed){ unlock(); } else { lock(); }
+  let authed=false; try{ authed=sessionStorage.getItem(AUTH_KEY)==='1'; }catch(e){}
+  if(authed && currentUser()){ unlock(); } else { lock(); }
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
-    const name=document.getElementById('login-user').value.trim();
-    const p=document.getElementById('login-pass').value;
-    const u=findUser(name);
-    if(u && whosHash(p)===u.passHash){
-      err.classList.remove('show');
-      unlock(u.username);
+    if(stage===1){
+      const u=findUser(userIn.value.trim());
+      if(u && whosHash(passIn.value)===u.passHash){ toStage2(u); }
+      else { setErr('Incorrect username or password.'); passIn.value=''; passIn.focus(); }
     } else {
-      err.classList.add('show');
-      const pf=document.getElementById('login-pass'); pf.value=''; pf.focus();
+      const u=pending; if(!u){ toStage1(); return; }
+      if(totpVerify(u.totpSecret, codeIn.value)){
+        if(!u.totpConfirmed){ const arr=loadUsers(); const x=arr.find(z=>z.username===u.username); if(x){ x.totpConfirmed=true; saveUsers(arr); } }
+        unlock(u.username);
+      } else {
+        setErr(u.totpConfirmed ? 'Incorrect or expired code — try the current 6-digit code.'
+                               : 'That code didn’t match. Check the key was entered correctly, then enter the current code.');
+        codeIn.value=''; codeIn.focus();
+      }
     }
   });
 })();
