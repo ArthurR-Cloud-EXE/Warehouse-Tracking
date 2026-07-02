@@ -12,3 +12,30 @@ Labor management — tracking worker productivity and task assignments
 Reporting & analytics — insights on throughput, accuracy, and space utilization
 
 The goal is to reduce errors, cut costs, and speed up the flow of goods from receiving dock to customer delivery.
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+## Current release — v0.1.1
+
+The application ships as a single, self-contained HTML file. No build step, server, or installation is required.
+
+- **`index.html`** — the current release build (equivalent to `warehouse_tracking_system-V-0.1.1.html`).
+- Versioned snapshots (`warehouse_tracking_system-V-*.html`) are kept for history.
+
+### Running it
+
+Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari). Data is stored locally in the browser (`localStorage`), and the UI supports light/dark themes.
+
+> The fonts (Inter, JetBrains Mono, Outfit) and the Tabler icons are bundled inline, so the app renders correctly with no external requests and works fully offline.
+
+### What's in this release
+
+- Calendar, Items, Serial numbers, Couriers, Movements, E-Waste, Stores, and Settings views
+- Per-client store directory (Blooms The Chemist network) with on-device custom stores
+- E-waste booking with a 2-week processing window
+- Light/dark theming with OS-preference detection
+
+### Hosting it on the web
+
+The app is fully static, so it can be hosted on Cloudflare Pages with no build
+step or backend. See [`DEPLOY.md`](DEPLOY.md) for step-by-step instructions.

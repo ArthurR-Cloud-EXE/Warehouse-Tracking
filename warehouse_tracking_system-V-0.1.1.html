@@ -163,6 +163,10 @@ body{
   font-weight:500;margin-top:5px;text-transform:uppercase;letter-spacing:.07em;
   padding-left:35px;
 }
+.logo .ver{
+  margin-top:3px;font-size:10px;letter-spacing:.04em;text-transform:none;
+  color:var(--color-text-tertiary);font-weight:500;
+}
 .nav-group{padding:0 .6rem;display:flex;flex-direction:column;gap:2px}
 .nav-label{
   font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
@@ -481,6 +485,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,.n
     <div class="logo">
       <div class="mark"><i class="ti ti-building-warehouse" aria-hidden="true"></i>WarehouseOS</div>
       <span>Tracking Platform</span>
+      <span class="ver">v0.1.1</span>
     </div>
     <div class="nav-group">
       <div class="nav-label">Operations</div>
@@ -5472,7 +5477,7 @@ const categories = ['Electronics','Peripherals','Accessories','Furniture','Other
 
 // Stores that movements can be attributed to, grouped by client.
 // BSO = Blooms The Chemist network (verified store locations).
-// CC  = second client — replace the placeholders with the real CC store list.
+// Add further clients as their verified store lists become available.
 const clientStores = {
   'BSO': [
     {n:'Blooms The Chemist Albury',a:'491 Townsend Street, Albury, NSW 2640, Australia',p:'02 6021 3255',e:'albury@blooms.net.au'},
@@ -5605,11 +5610,6 @@ const clientStores = {
     {n:'Blooms The Chemist Yarrawonga Lake End',a:'52A, 54 (including part first floor) and 54A Belmore Street, Yarrawonga, VIC 3730',p:'(03) 5744 3035',e:'yarrawongalakeend@blooms.net.au'},
     {n:'Blooms The Chemist Yarrawonga Woods Road',a:'Pharmacy Tenancy AA, Yarrawonga Medical Clinic, 72 Woods Road, Yarrawonga, VIC 3730',p:'(03) 5744 0111',e:'yarrawongawoodsrd@blooms.net.au'},
     {n:'Blooms The Chemist Young',a:'46 Boorowa Street, Young, NSW 2594, Australia',p:'02 6382 2009',e:'young@blooms.net.au'},
-  ],
-  'CC': [
-    {n:'CC — Store 1'},
-    {n:'CC — Store 2'},
-    {n:'CC — Store 3'},
   ],
 };
 // Stores added on the fly are remembered on this device and merged per client.
